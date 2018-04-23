@@ -9,12 +9,12 @@ LIBUNISTR = $(/urs/lib/libunistring.so)
 
 OUT_MAINSERVER	=	chatServer
 OUT_MAINCLIENT	=	chatClient
-OUT_MAINUTILS		= utilsc
+OUT_MAINUTILS		= utilsC
 OUT_UTILSTEST 	= utilstest
 
 
 CFLAGS = -std=c99 -Wall -D_POSIX_C_SOURCE=200112L \
-				 -lpthread -pthread -LLIBUNISTR #-Werror  
+				 -lpthread -pthread #-Werror  
 
 #	-Wextra -Wmissing-declarations\
 # -Werror-implicit-function-declaration\

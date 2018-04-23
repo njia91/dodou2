@@ -14,7 +14,7 @@
 #include "pduCommon.h"
 
 //Server-nameserver interaction
-char *pduCreator_req(uint8_t* serverName, uint16_t port);
+uint8_t *pduCreator_req(pduReq *req);
 
 
 char *pduCreator_alive(uint8_t noOfClients, uint16_t idNo);

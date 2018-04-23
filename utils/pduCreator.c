@@ -1,17 +1,28 @@
 #include "pduCreator.h"
 
-//Server-nameserver interaction
-char *pduCreator_req(uint8_t *serverName, uint16_t port){
-  pduReq *req = (pduReq*) calloc( 1, sizeof(pduReq));
-
-  req->opCode = REQ;
-  req->serverLength = strlen((char*) serverName);
-  req->tcpPort = htons(port);
-  //req->serverName = calloc(serverName;
-
-  return (char*) req;
+int main(int argc, char **argv){
+  printf("Hello...\n");
+  return 1;
 }
 
+//Server-nameserver interaction
+uint8_t *pduCreator_req(pduReq *req){
+  int reqLen =  WORD_SIZE + req->serverNameLen;
+  int noOfWords;
+
+  if (reqLen % WORD_SIZE == 0){
+    noOfWords = (reqLen / 4);
+  } else {
+    noOfWords = (reqLen / 4) + 1;
+  }
+
+  uint8_t *pduBuffer = calloc(sizeof(uint8_t), noOfWords * WORD_SIZE);
+
+  //req->serverName = calloc(serverName;
+
+  return pduBuffer;
+
+} 
 char *pduCreator_alive(uint8_t noOfClients, uint16_t idNo);
 
 //Client-nameserver interaction

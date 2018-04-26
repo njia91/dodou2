@@ -1,6 +1,7 @@
 #include <stdint.h>
 
 static const uint8_t WORD_SIZE     = 4;     
+static const uint8_t BYTE_SIZE     = 1;
 
 static const uint8_t REQ           = 0;
 static const uint8_t ACK           = 1;

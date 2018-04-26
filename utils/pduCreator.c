@@ -9,6 +9,7 @@ int main(int argc, char **argv){
 uint8_t *pduCreator_req(pduReq *req){
   int reqLen =  WORD_SIZE + req->serverNameLen;
   int noOfWords;
+  uint16_t u16;
 
   if (reqLen % WORD_SIZE == 0){
     noOfWords = (reqLen / 4);
@@ -17,11 +18,14 @@ uint8_t *pduCreator_req(pduReq *req){
   }
 
   uint8_t *pduBuffer = calloc(sizeof(uint8_t), noOfWords * WORD_SIZE);
+  u16 = htons(req->tcpPort);
 
-  //req->serverName = calloc(serverName;
+  memcpy(pduBuffer, &(req->opCode), sizeof(req->opCode));
+  memcpy(pduBuffer + BYTE_SIZE, &(req->serverNameLen), sizeof(req->serverNameLen));
+  memcpy(pduBuffer + (2 * BYTE_SIZE), &u16, sizeof(u16));
+  memcpy(pduBuffer + WORD_SIZE, req->serverName, req->serverNameLen);
 
   return pduBuffer;
-
 } 
 char *pduCreator_alive(uint8_t noOfClients, uint16_t idNo);
 

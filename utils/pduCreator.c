@@ -9,14 +9,14 @@ uint8_t *pduCreator_req(pduReq *req){
     return NULL;
   }
 
-  int reqLen =  WORD_SIZE + req->serverNameLen;
+  int packetSize =  WORD_SIZE + req->serverNameLen;
   int noOfWords;
   uint16_t u16;
 
-  if (reqLen % WORD_SIZE == 0){
-    noOfWords = (reqLen / 4);
+  if (packetSize % WORD_SIZE == 0){
+    noOfWords = (packetSize / 4);
   } else {
-    noOfWords = (reqLen / 4) + 1;
+    noOfWords = (packetSize / 4) + 1;
   }
 
   uint8_t *pduBuffer = calloc(sizeof(uint8_t), noOfWords * WORD_SIZE);
@@ -32,7 +32,7 @@ uint8_t *pduCreator_req(pduReq *req){
 
 uint8_t *pduCreator_alive(pduAlive *alive){
 
-    if(alive->opCode != ALIVE){
+  if(alive->opCode != ALIVE){
     fprintf(stderr, "Invalid Operation Code.\n");
     return NULL;
   }
@@ -49,7 +49,11 @@ uint8_t *pduCreator_alive(pduAlive *alive){
 }
 
 //Client-nameserver interaction
-uint8_t *pduCreator_getList();
+uint8_t *pduCreator_getList(){
+  uint8_t *pduBuffer = calloc(sizeof(uint8_t), WORD_SIZE);
+  pduBuffer[0] = GETLIST;
+  return pduBuffer;
+}
 
 
 //Client-server interaction

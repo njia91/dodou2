@@ -84,11 +84,13 @@ TEST(PduCreatorTest, creatingAlivePdu){
   memcpy(&retNoOfClients  , retVal + BYTE_SIZE, sizeof(uint8_t));
   memcpy(&retId  , retVal + (2 *BYTE_SIZE), sizeof(uint16_t));
   retId = ntohs(retId);
-  
+
   EXPECT_EQ(retOpCode, a.opCode);
   EXPECT_EQ(retNoOfClients, a.noOfClients);
   EXPECT_EQ(retId, a.id);
 
+  free(retVal);
 
 }
+
 

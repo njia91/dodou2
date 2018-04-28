@@ -32,4 +32,61 @@ typedef struct {
   uint16_t  id;
 } pduAlive;
 
+typedef struct {
+  uint8_t   opCode;
+  uint16_t  id;
+} pduAck;
+
+typedef struct {
+  uint8_t   opCode;
+  uint16_t  id;
+} pduNotReq;
+
+typedef struct {
+  uint8_t   opCode;
+  uint16_t  noOfServers;
+  uint8_t  *ipAdress;
+  uint16_t  portNo;
+  uint8_t   noOfClients;
+  uint8_t   serverNameLen;
+  uint8_t   *serverName;
+} pduSList;
+
+typedef struct {
+  uint8_t   opCode;
+  uint8_t   idSize;
+  uint8_t   id;
+} pduJoin;
+
+typedef struct {
+  uint8_t   opCode;
+  uint8_t   noOfIds;
+  uint8_t   dataSize;
+  uint8_t   *ids;
+} pduParticipants;
+
+typedef struct {
+  uint8_t   opCode;
+  uint8_t   idSize;
+  uint8_t   checkSum;
+  uint8_t   messageSize;
+  uint32_t  timeStamp;
+  uint8_t   *message;
+  uint8_t   *id;
+} pduMess;
+
+typedef struct {
+  uint8_t   opCode;
+  uint8_t   idSize;
+  uint32_t  timeStamp;
+  uint8_t   *id;
+} pduPJoin;
+
+typedef struct {
+  uint8_t   opCode;
+  uint8_t   idSize;
+  uint32_t  timeStamp;
+  uint8_t   *id;
+} pduPLeave;
+
 #endif

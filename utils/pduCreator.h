@@ -14,7 +14,6 @@
 //Server-nameserver interaction
 uint8_t *pduCreator_req(pduReq *req);
 
-
 uint8_t *pduCreator_alive(pduAlive *alive);
 
 //Client-nameserver interaction

@@ -6,6 +6,7 @@
 static const uint8_t BYTE_SIZE     = 1;
 static const uint8_t WORD_SIZE     = 4;     
 
+//Operational Codes 
 static const uint8_t REQ           = 0;
 static const uint8_t ACK           = 1;
 static const uint8_t ALIVE         = 2;
@@ -22,8 +23,8 @@ static const uint8_t NOTREQ        = 100;
 typedef struct {
   uint8_t   opCode;
   uint8_t   serverNameLen;
-  uint16_t  tcpPort;
   uint8_t   *serverName;
+  uint16_t  tcpPort;
 } pduReq;
 
 typedef struct {
@@ -44,18 +45,18 @@ typedef struct {
 
 typedef struct {
   uint8_t   opCode;
-  uint16_t  noOfServers;
-  uint8_t  *ipAdress;
-  uint16_t  portNo;
   uint8_t   noOfClients;
   uint8_t   serverNameLen;
+  uint8_t   *ipAdress;
   uint8_t   *serverName;
+  uint16_t  portNo;
+  uint16_t  noOfServers;
 } pduSList;
 
 typedef struct {
   uint8_t   opCode;
   uint8_t   idSize;
-  uint8_t   id;
+  uint8_t   *id;
 } pduJoin;
 
 typedef struct {
@@ -70,23 +71,23 @@ typedef struct {
   uint8_t   idSize;
   uint8_t   checkSum;
   uint8_t   messageSize;
-  uint32_t  timeStamp;
   uint8_t   *message;
   uint8_t   *id;
+  uint32_t  timeStamp;
 } pduMess;
 
 typedef struct {
   uint8_t   opCode;
   uint8_t   idSize;
-  uint32_t  timeStamp;
   uint8_t   *id;
+  uint32_t  timeStamp;
 } pduPJoin;
 
 typedef struct {
   uint8_t   opCode;
   uint8_t   idSize;
-  uint32_t  timeStamp;
   uint8_t   *id;
+  uint32_t  timeStamp;
 } pduPLeave;
 
 #endif

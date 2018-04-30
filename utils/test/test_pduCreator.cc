@@ -9,6 +9,7 @@ extern "C"{
   #include "pduCommon.h"
   #include "pduCreator.h"
   #include <stdlib.h>
+  #include <time.h>
 #ifdef __cplusplus
 }
 #endif
@@ -16,6 +17,7 @@ class PduCreatorTest : public testing::Test
 {
   void SetUp(){
     std::cout << " I SETUP !!!" << std::endl;
+    setlocale(LC_CTYPE, "");
   }
 
   void TearDown(){}
@@ -90,7 +92,62 @@ TEST(PduCreatorTest, creatingAlivePdu){
   EXPECT_EQ(retId, a.id);
 
   free(retVal);
-
 }
 
+TEST(PduCreatorTest, creatingJoinPdu){
+  pduJoin j;
+  char *id = (char *)"MICKEÅÄÖ";
 
+  j.opCode = JOIN;
+  j.idSize = strlen(id);
+  j.id = (uint8_t *)id;
+
+  uint8_t *retVal = pduCreator_join(&j);
+
+  uint8_t retOpCode;
+  uint8_t retIdSize;
+
+  memcpy(&retOpCode, retVal, sizeof(uint8_t));
+  memcpy(&retIdSize  , retVal + BYTE_SIZE, sizeof(uint8_t));
+  uint8_t retId[retIdSize + 1];
+  memcpy(&retId  , retVal + WORD_SIZE, retIdSize);
+  retId[retIdSize] = '\0';
+
+  EXPECT_EQ(retOpCode, j.opCode);
+  EXPECT_EQ(retIdSize, j.idSize);
+  EXPECT_EQ(strcmp((char *)retId, (char *)j.id), 0);
+
+  free(retVal);
+}
+
+TEST(PduCreatorTest, creatingPJoinPdu){
+  pduPJoin pj;
+  char *id = (char *)"MICKEÅÄÖ";
+
+  pj.opCode = PJOIN;
+  pj.idSize = strlen(id);
+  pj.timeStamp = (uint32_t)time(NULL);
+  pj.id = (uint8_t *)id;
+
+  uint8_t *retVal = pduCreator_pJoin(&pj);
+
+  uint8_t retOpCode;
+  uint8_t retIdSize;
+  uint32_t retTimeStamp;
+  
+
+  memcpy(&retOpCode, retVal, sizeof(uint8_t));
+  memcpy(&retIdSize, retVal + BYTE_SIZE, sizeof(uint8_t));
+  memcpy(&retTimeStamp , retVal + WORD_SIZE, sizeof(uint32_t));
+  char retId[retIdSize + 1];
+  memcpy(&retId, retVal + (2 *WORD_SIZE), retIdSize);
+  retId[retIdSize] = '\0';
+  retTimeStamp = ntohl(retTimeStamp);
+
+  EXPECT_EQ(retOpCode, pj.opCode);
+  EXPECT_EQ(retIdSize, pj.idSize);
+  EXPECT_EQ(strcmp(retId, (char *)pj.id), 0);
+  EXPECT_EQ(retTimeStamp, pj.timeStamp); 
+
+  free(retVal);
+}

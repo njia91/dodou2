@@ -25,14 +25,13 @@ uint8_t *pduCreator_join(pduJoin *join);
 
 uint8_t *pduCreator_pJoin(pduPJoin *pjoin);
 
-uint8_t *pduCreator_pleave(uint8_t idLength, uint32_t time, uint8_t* idStr);
+uint8_t *pduCreator_pleave(pduPLeave *pLeave);
 
-uint8_t *pduCreator_participands(uint8_t noOfIds, uint16_t length);
+uint8_t *pduCreator_participants(pduParticipants *par);
 
 uint8_t *pduCreator_quit();
 
-uint8_t *pduCreator_mess(uint8_t idLength, uint16_t messageLength, 
-                      uint32_t time, uint8_t* message);
+uint8_t *pduCreator_mess(pduMess *mess);
 
 int calculateNoOfWordsInPacket(int packetSize);
 

@@ -22,7 +22,7 @@ static const uint8_t NOTREQ        = 100;
 
 typedef struct {
   uint8_t   opCode;
-  uint8_t   serverNameLen;
+  uint8_t   serverNameSize;
   uint8_t   *serverName;
   uint16_t  tcpPort;
 } pduReq;
@@ -83,11 +83,6 @@ typedef struct {
   uint32_t  timeStamp;
 } pduPJoin;
 
-typedef struct {
-  uint8_t   opCode;
-  uint8_t   idSize;
-  uint8_t   *id;
-  uint32_t  timeStamp;
-} pduPLeave;
+typedef pduPJoin pduPLeave;
 
 #endif

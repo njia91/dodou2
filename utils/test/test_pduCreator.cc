@@ -32,7 +32,7 @@ TEST(PduCreatorTest, creatingReqPacket){
   r.opCode = REQ;
   r.tcpPort = 454;
   r.serverName = (uint8_t *)serName;
-  r.serverNameLen = serLen;
+  r.serverNameSize = serLen;
 
   uint8_t *retVal = pduCreator_req(&r);
 
@@ -62,7 +62,7 @@ TEST(PduCreatorTest, creatingReqPacketWithInvalidOpCode){
   r.opCode = ACK;
   r.tcpPort = 454;
   r.serverName = (uint8_t *)"testHost";
-  r.serverNameLen = strlen((char *)r.serverName);
+  r.serverNameSize = strlen((char *)r.serverName);
 
   uint8_t *retVal = pduCreator_req(&r);
 
@@ -151,3 +151,126 @@ TEST(PduCreatorTest, creatingPJoinPdu){
 
   free(retVal);
 }
+
+TEST(PduCreatorTest, creatingParticipantsPdu){
+  pduParticipants p;
+  char *ids[3];
+
+  ids[0] = (char *)"MICKE"; 
+  ids[1]= (char *)"JONAS";
+  ids[2] = (char *)"JOHAN";
+  int dataSize = strlen(ids[0]) + strlen(ids[1]) + strlen(ids[2]) + 3;
+  char allIds[dataSize];
+
+  memset(allIds, 0, dataSize);
+  memcpy(allIds, ids[0], strlen(ids[0]) + 1);
+  memcpy(allIds + strlen(ids[0]) + 1, ids[1], strlen(ids[1]) + 1);
+  memcpy(allIds + strlen(ids[0]) + strlen(ids[1]) + 2, ids[2], strlen(ids[2]) + 1);
+  
+
+
+  p.opCode = PARTICIPANTS;
+  p.noOfIds = 3;
+  p.dataSize = dataSize;
+  p.ids = (uint8_t *)allIds;
+
+  uint8_t *retVal = pduCreator_participants(&p);
+
+  uint8_t retOpCode;
+  uint8_t retNoOfIds;
+  uint16_t retDataSize;
+    
+
+  memcpy(&retOpCode, retVal, sizeof(uint8_t));
+  memcpy(&retNoOfIds, retVal + BYTE_SIZE, sizeof(uint8_t));
+  memcpy(&retDataSize , retVal + (2 * BYTE_SIZE), sizeof(uint16_t));
+  retDataSize = ntohs(retDataSize);
+
+  uint8_t retData[retDataSize];
+  memcpy(&retData, retVal + WORD_SIZE, retDataSize);
+  char *retIds[retNoOfIds];
+
+  int i = 0;
+  int idNo = 0;
+  int pos = 0;
+  while(idNo < retNoOfIds){
+    do{
+      i++;
+    } while(retData[i] != '\0');
+    retIds[idNo] = (char *)calloc(sizeof(uint8_t), i);
+    memcpy(retIds[idNo], &retData[pos], i);
+    pos = i + 1;
+    idNo++;
+  }
+
+  EXPECT_EQ(retOpCode, p.opCode);
+  EXPECT_EQ(retNoOfIds, p.noOfIds);
+  EXPECT_EQ(retDataSize, p.dataSize);
+  for(int i = 0; i < retNoOfIds; i++){
+    EXPECT_EQ(strcmp(retIds[i], ids[i]), 0);
+  }
+  
+  free(retVal);
+}
+
+TEST(PduCreatorTest, creatingPLeavePdu){
+  pduPJoin p;
+  char *id = (char *)"MICKEÅÄÖ";
+
+  p.opCode = PLEAVE;
+  p.idSize = strlen(id);
+  p.timeStamp = (uint32_t)time(NULL);
+  p.id = (uint8_t *)id;
+
+  uint8_t *retVal = pduCreator_pleave(&p);
+
+  uint8_t retOpCode;
+  uint8_t retIdSize;
+  uint32_t retTimeStamp;
+  
+
+  memcpy(&retOpCode, retVal, sizeof(uint8_t));
+  memcpy(&retIdSize, retVal + BYTE_SIZE, sizeof(uint8_t));
+  memcpy(&retTimeStamp , retVal + WORD_SIZE, sizeof(uint32_t));
+  char retId[retIdSize + 1];
+  memcpy(&retId, retVal + (2 *WORD_SIZE), retIdSize);
+  retId[retIdSize] = '\0';
+  retTimeStamp = ntohl(retTimeStamp);
+
+  EXPECT_EQ(retOpCode, p.opCode);
+  EXPECT_EQ(retIdSize, p.idSize);
+  EXPECT_EQ(strcmp(retId, (char *)p.id), 0);
+  EXPECT_EQ(retTimeStamp, p.timeStamp); 
+
+  free(retVal);
+}
+
+TEST(PduCreatorTest, creatingMessPdu){
+  //pduMess p;
+
+  uint8_t chflip = 0;
+  uint8_t ch = 0;
+
+  char *str = (char *)"MICKEasd";
+
+  for(int i = 0; i < (int)strlen(str); i++){
+    ch += str[i];
+  }
+
+  chflip = ~ch;
+
+  uint16_t ps = 0; 
+   ps = ~(chflip + ch);
+
+  printf("Casdasdhecksum:+ Checkflip %u\n", ps);
+  printf("Checksum: %d, Checkflip %d\n", ch, chflip);
+
+  if((char)~(chflip + ch)){
+    printf("Stuff is treu  \n");
+  }
+
+  //if()
+
+}
+
+

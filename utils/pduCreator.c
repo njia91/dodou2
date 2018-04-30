@@ -9,7 +9,7 @@ uint8_t *pduCreator_req(pduReq *req){
     return NULL;
   }
 
-  int packetSize =  WORD_SIZE + req->serverNameLen;
+  int packetSize =  WORD_SIZE + req->serverNameSize;
   int noOfWords = calculateNoOfWordsInPacket(packetSize);
   uint16_t u16;
 
@@ -17,9 +17,9 @@ uint8_t *pduCreator_req(pduReq *req){
   u16 = htons(req->tcpPort);
 
   memcpy(pduBuffer, &(req->opCode), sizeof(uint8_t));
-  memcpy(pduBuffer + BYTE_SIZE, &(req->serverNameLen), sizeof(uint8_t));
+  memcpy(pduBuffer + BYTE_SIZE, &(req->serverNameSize), sizeof(uint8_t));
   memcpy(pduBuffer + (2 * BYTE_SIZE), &u16, sizeof(uint16_t));
-  memcpy(pduBuffer + WORD_SIZE, req->serverName, req->serverNameLen);
+  memcpy(pduBuffer + WORD_SIZE, req->serverName, req->serverNameSize);
 
   return pduBuffer;
 } 
@@ -71,7 +71,7 @@ uint8_t *pduCreator_join(pduJoin *join){
 
 uint8_t *pduCreator_pJoin(pduPJoin *pJoin){
 
-  if(pJoin->opCode != PJOIN){
+  if(!(pJoin->opCode == PJOIN || pJoin->opCode == PLEAVE)){
     fprintf(stderr, "Invalid Operation Code.\n");
     return NULL;
   }
@@ -89,15 +89,56 @@ uint8_t *pduCreator_pJoin(pduPJoin *pJoin){
   return pduBuffer;
 }
 
-uint8_t *pduCreator_pleave(uint8_t idLength, uint32_t time, uint8_t *idStr);
 
-uint8_t *pduCreator_participands(uint8_t noOfIds, uint16_t length);
+uint8_t *pduCreator_participants(pduParticipants *par){
 
-uint8_t *pduCreator_quit();
+  if(par->opCode != PARTICIPANTS){
+    fprintf(stderr, "Invalid Operation Code.\n");
+    return NULL;
+  }
 
-uint8_t *pduCreator_mess(uint8_t idLength, uint16_t messageLength,
-                      uint32_t time, uint8_t *message);
+  int packetSize = (2 * WORD_SIZE) + par->dataSize;
+  int noOfWords = calculateNoOfWordsInPacket(packetSize);
 
+  uint8_t *pduBuffer = calloc(sizeof(uint8_t), noOfWords * WORD_SIZE);
+  uint16_t u16 = htons(par->dataSize);
+
+  memcpy(pduBuffer, &(par->opCode), sizeof(uint8_t));
+  memcpy(pduBuffer + BYTE_SIZE, &(par->noOfIds), sizeof(uint8_t));
+  memcpy(pduBuffer + (2 *BYTE_SIZE) , &u16, sizeof(uint16_t));
+  memcpy(pduBuffer + WORD_SIZE, par->ids, par->dataSize);
+
+  return pduBuffer;
+}
+
+uint8_t *pduCreator_pleave(pduPLeave *pLeave){
+  return pduCreator_pJoin(pLeave);
+}
+
+uint8_t *pduCreator_quit(){
+  uint8_t *pduBuffer = calloc(sizeof(uint8_t), WORD_SIZE);
+  pduBuffer[0] = GETLIST;
+  return pduBuffer;
+}
+
+uint8_t *pduCreator_mess(pduMess *mess){
+
+   if(mess->opCode != MESS){
+    fprintf(stderr, "Invalid Operation Code.\n");
+    return NULL;
+  }
+
+  int packetSize = mess->messageSize + mess->idSize + (3 * WORD_SIZE);
+  int noOfWords = calculateNoOfWordsInPacket(packetSize);
+
+  uint8_t *pduBuffer = calloc(sizeof(uint8_t), noOfWords * WORD_SIZE);
+
+  memcpy(pduBuffer, &(mess->opCode), sizeof(uint8_t));
+  memcpy(pduBuffer + (2 * BYTE_SIZE), &(mess->idSize), sizeof(uint8_t));
+
+
+  return NULL;
+}
 
 int calculateNoOfWordsInPacket(int packetSize){
   if (packetSize % WORD_SIZE == 0){

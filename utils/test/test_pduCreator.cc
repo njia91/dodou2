@@ -245,32 +245,115 @@ TEST(PduCreatorTest, creatingPLeavePdu){
   free(retVal);
 }
 
-TEST(PduCreatorTest, creatingMessPdu){
-  //pduMess p;
+TEST(PduCreatorTest, creatingMessPduServerSide){
+  pduMess p;
+  char *id = (char *)"MICKE1233";
+  char *mess = (char *)"Fösta meddelande...23";
 
-  uint8_t chflip = 0;
-  uint8_t ch = 0;
+  p.opCode = MESS;
+  p.idSize = strlen(id);
+  p.timeStamp = (uint32_t)time(NULL);
+  p.id = (uint8_t *)id;
+  p.messageSize = (uint8_t)strlen(mess);
+  p.message = (uint8_t *)mess;
 
-  char *str = (char *)"MICKEasd";
+  uint8_t *retVal = pduCreator_mess(&p);
 
-  for(int i = 0; i < (int)strlen(str); i++){
-    ch += str[i];
-  }
+  uint8_t retOpCode;
+  uint8_t retIdSize;
+  uint8_t retCheckSum;
+  uint16_t retMessSize;
+  uint32_t retTimeStamp;
 
-  chflip = ~ch;
+  memcpy(&retOpCode, retVal, sizeof(uint8_t));
+  memcpy(&retIdSize, retVal + (2 * BYTE_SIZE), sizeof(uint8_t));
+  memcpy(&retCheckSum, retVal + (3 * BYTE_SIZE), sizeof(uint8_t));
+  memcpy(&retMessSize, retVal + WORD_SIZE, sizeof(uint16_t));
+  memcpy(&retTimeStamp , retVal + (2 * WORD_SIZE), sizeof(uint32_t));
 
-  uint16_t ps = 0; 
-   ps = ~(chflip + ch);
+  retTimeStamp = ntohl(retTimeStamp);
+  retMessSize = ntohs(retMessSize);
 
-  printf("Casdasdhecksum:+ Checkflip %u\n", ps);
-  printf("Checksum: %d, Checkflip %d\n", ch, chflip);
+  int noOfWords = 3; //Size of header
+  noOfWords += calculateNoOfWords(retIdSize);
+  noOfWords += calculateNoOfWords(retMessSize);
+  uint8_t checkSum = calculateCheckSum(retVal, 3 * BYTE_SIZE);
+  checkSum += calculateCheckSum(retVal + WORD_SIZE, WORD_SIZE * (noOfWords - 1));
 
-  if((char)~(chflip + ch)){
-    printf("Stuff is treu  \n");
-  }
+  char retId[retIdSize + 1];
+  char retMess[retMessSize + 1];
+  int offset = calculateNoOfWords(retMessSize) * WORD_SIZE;
+  memcpy(&retMess, retVal + (3 * WORD_SIZE), retMessSize);
+  memcpy(&retId, retVal + (3 * WORD_SIZE) + offset, retIdSize);
+  retId[retIdSize] = '\0';
+  retMess[retMessSize] = '\0';
+ 
+  EXPECT_EQ(retOpCode, p.opCode);
+  EXPECT_EQ(retIdSize, p.idSize);
+  EXPECT_EQ(retMessSize, p.messageSize);
+  EXPECT_EQ(strcmp(retId, (char *)p.id), 0);
+  EXPECT_EQ(strcmp(retMess, (char *)p.message), 0);
+  EXPECT_EQ(retTimeStamp, p.timeStamp); 
 
-  //if()
+  uint8_t res = ~(checkSum + retCheckSum);
+  EXPECT_FALSE(res);
+
+  free(retVal);
 
 }
 
+TEST(PduCreatorTest, creatingMessPduClientSide){
+  pduMess p;
+  char *mess = (char *)"Fösta meddelande...23";
 
+  p.opCode = MESS;
+  p.idSize = 0;
+  p.timeStamp = 0;
+  p.id = NULL;
+  p.messageSize = (uint8_t)strlen(mess);
+  p.message = (uint8_t *)mess;
+
+  uint8_t *retVal = pduCreator_mess(&p);
+
+  uint8_t retOpCode;
+  uint8_t retIdSize;
+  uint8_t retCheckSum;
+  uint16_t retMessSize;
+  uint32_t retTimeStamp;
+
+  memcpy(&retOpCode, retVal, sizeof(uint8_t));
+  memcpy(&retIdSize, retVal + (2 * BYTE_SIZE), sizeof(uint8_t));
+  memcpy(&retCheckSum, retVal + (3 * BYTE_SIZE), sizeof(uint8_t));
+  memcpy(&retMessSize, retVal + WORD_SIZE, sizeof(uint16_t));
+  memcpy(&retTimeStamp , retVal + (2 * WORD_SIZE), sizeof(uint32_t));
+
+  retTimeStamp = ntohl(retTimeStamp);
+  retMessSize = ntohs(retMessSize);
+
+  int noOfWords = 3; //Size of header
+  noOfWords += calculateNoOfWords(retIdSize);
+  noOfWords += calculateNoOfWords(retMessSize);
+  uint8_t checkSum = calculateCheckSum(retVal, 3 * BYTE_SIZE);
+  checkSum += calculateCheckSum(retVal + WORD_SIZE, WORD_SIZE * (noOfWords - 1));
+
+  char retId[retIdSize + 1];
+  char retMess[retMessSize + 1];
+  int offset = calculateNoOfWords(retMessSize) * WORD_SIZE;
+  memcpy(&retMess, retVal + (3 * WORD_SIZE), retMessSize);
+  memcpy(&retId, retVal + (3 * WORD_SIZE) + offset, retIdSize);
+  retId[retIdSize] = '\0';
+  retMess[retMessSize] = '\0';
+ 
+  EXPECT_EQ(retOpCode, p.opCode);
+  EXPECT_EQ(retIdSize, p.idSize);
+  EXPECT_EQ(retMessSize, p.messageSize);
+  EXPECT_EQ(strcmp(retId, (char *)p.id), 0);
+  EXPECT_EQ(strcmp(retMess, (char *)p.message), 0);
+  EXPECT_EQ(retTimeStamp, p.timeStamp); 
+
+  uint8_t res = ~(checkSum + retCheckSum);
+  EXPECT_FALSE(res);
+
+  free(retVal);
+
+}

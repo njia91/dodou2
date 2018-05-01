@@ -8,7 +8,6 @@
 #include <unistr.h>
 #include <arpa/inet.h>
 
-
 #include "pduCommon.h"
 
 //Server-nameserver interaction
@@ -33,6 +32,6 @@ uint8_t *pduCreator_quit();
 
 uint8_t *pduCreator_mess(pduMess *mess);
 
-int calculateNoOfWordsInPacket(int packetSize);
+int calculateNoOfWords(int packetSize);
 
 #endif

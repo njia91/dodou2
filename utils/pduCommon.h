@@ -85,4 +85,6 @@ typedef struct {
 
 typedef pduPJoin pduPLeave;
 
+uint8_t calculateCheckSum(void *p, int size);
+
 #endif

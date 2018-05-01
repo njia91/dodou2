@@ -34,18 +34,22 @@ client: $(SRCSCLIENT) utils.o
 server:	$(SRCSSERVER) utils.o  
 	$(CC) $(CFLAGS) $(SRCSSERVER) $(SRCSUTILS) -o $(OUT_MAINSERVER) -g
 
-list.o: $(UTIL_DIR)/list.c $(UTIL_DIR)/list.c 
-	$(CC) $(CFLAGS) -c  -o out/$@ $(SRCSLIST)   -g
+list.o: $(UTIL_DIR)/list.c $(UTIL_DIR)/list.h 
+	$(CC) $(CFLAGS) -c  -o out/$@ $(UTIL_DIR)/list.c  -g
 
-pduCreator.o : $(UTIL_DIR)/pduCreator.c  $(UTIL_DIR)/pduCreator.h 
+pduCommon.o: $(UTIL_DIR)/pduCommon.c $(UTIL_DIR)/pduCommon.h 
+	$(CC) $(CFLAGS) -c  -o out/$@ $(UTIL_DIR)/pduCommon.c  -g
+
+pduCreator.o : $(UTIL_DIR)/pduCreator.c  $(UTIL_DIR)/pduCreator.h
 	$(CC) $(CFLAGS) -c $(UTIL_DIR)/pduCreator.c -o out/$@ -I$(UTIL_DIR)  -g
 
 #Unit testing
 testPduCreator.o: $(TESTPDUCREATOR) $(GTEST_HEADERS) pduCreator.o
 	$(CXX) $(CPPFLAGS) -I$(UTIL_DIR) $(CXXFLAGS) -c $(TESTPDUCREATOR) -o out/$@
 
-testPduCreator: testPduCreator.o pduCreator.o 
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) out/testPduCreator.o out/pduCreator.o lib/libgtest.a -o $(OUT_UTILSTEST)  -g
+testPduCreator: testPduCreator.o pduCreator.o pduCommon.o
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) out/testPduCreator.o out/pduCreator.o out/pduCommon.o \
+					lib/libgtest.a -o $(OUT_UTILSTEST)  -g
 
 #Google test
 gtest-all.o : $(GTEST_SRCS_)

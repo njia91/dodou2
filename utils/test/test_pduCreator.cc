@@ -343,11 +343,11 @@ TEST(PduCreatorTest, creatingMessPduClientSide){
   memcpy(&retId, retVal + (3 * WORD_SIZE) + offset, retIdSize);
   retId[retIdSize] = '\0';
   retMess[retMessSize] = '\0';
- 
+
   EXPECT_EQ(retOpCode, p.opCode);
   EXPECT_EQ(retIdSize, p.idSize);
   EXPECT_EQ(retMessSize, p.messageSize);
-  EXPECT_EQ(strcmp(retId, (char *)p.id), 0);
+  EXPECT_EQ(retId[0], 0);
   EXPECT_EQ(strcmp(retMess, (char *)p.message), 0);
   EXPECT_EQ(retTimeStamp, p.timeStamp); 
 

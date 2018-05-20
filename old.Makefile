@@ -28,11 +28,11 @@ ARFLAGS = -rv
 #	-Wundef -Wshadow -Wstrict-prototypes -Wswitch-default\
 #	-Wstrict-prototypes -Wunreachable-code 
 
-client: $(SRCSCLIENT) utils.o  
-	$(CC) $(CFLAGS) $(SRCSCLIENT) $(SRCSUTILS) -o $(OUT_MAINCLIENT) -g
+#client: $(SRCSCLIENT) pduCommon.o list.o
+#	$(CC) $(CFLAGS) $(SRCSCLIENT) $(SRCSUTILS) -o $(OUT_MAINCLIENT) -g
 
-server:	$(SRCSSERVER) utils.o  
-	$(CC) $(CFLAGS) $(SRCSSERVER) $(SRCSUTILS) -o $(OUT_MAINSERVER) -g
+#server:	$(SRCSSERVER) pduCommon.o list.o
+#	$(CC) $(CFLAGS) $(SRCSSERVER) $(SRCSUTILS) -o $(OUT_MAINSERVER) -g
 
 list.o: $(UTIL_DIR)/list.c $(UTIL_DIR)/list.h 
 	$(CC) $(CFLAGS) -c  -o out/$@ $(UTIL_DIR)/list.c  -g

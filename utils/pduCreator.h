@@ -18,7 +18,6 @@ uint8_t *pduCreator_alive(pduAlive *alive);
 //Client-nameserver interaction
 uint8_t *pduCreator_getList();
 
-
 //Client-server interaction
 uint8_t *pduCreator_join(pduJoin *join);
 

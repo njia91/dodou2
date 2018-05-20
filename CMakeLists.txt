@@ -17,5 +17,12 @@ add_executable(testPduCreator
         utils/pduCreator.c
         utils/test/test_pduCreator.cc)
 
+add_executable(testPduReader
+        utils/pduCommon.c
+        utils/pduReader.c
+        utils/pduCreator.c
+        utils/test/test_pduReader.cc)
+
 target_link_libraries(testPduCreator ${PThreadLib} ${CMAKE_SOURCE_DIR}/lib/libgtest.a)
+target_link_libraries(testPduReader ${PThreadLib} ${CMAKE_SOURCE_DIR}/lib/libgtest.a)
 #target_link_libraries(testPduCreator gtest gtest_main)

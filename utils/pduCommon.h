@@ -45,13 +45,17 @@ typedef struct {
 
 typedef struct {
   uint8_t   opCode;
+  uint16_t  noOfServers;
+  serverInfo *servers;
+} pduSList;
+
+typedef struct {
+  uint8_t   *ipAdress;
   uint8_t   noOfClients;
   uint8_t   serverNameLen;
-  uint8_t   *ipAdress;
   uint8_t   *serverName;
-  uint16_t  portNo;
-  uint16_t  noOfServers;
-} pduSList;
+  uint16_t  port;
+} serverInfo;
 
 typedef struct {
   uint8_t   opCode;
@@ -82,6 +86,11 @@ typedef struct {
   uint8_t   *id;
   uint32_t  timeStamp;
 } pduPJoin;
+
+typedef struct {
+  uint8_t   opCode;
+} pduQuit;
+
 
 typedef pduPJoin pduPLeave;
 

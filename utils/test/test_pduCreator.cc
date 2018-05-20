@@ -16,7 +16,6 @@ extern "C"{
 class PduCreatorTest : public testing::Test
 {
   void SetUp(){
-    std::cout << " I SETUP !!!" << std::endl;
     setlocale(LC_CTYPE, "");
   }
 

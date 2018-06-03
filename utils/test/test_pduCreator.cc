@@ -156,7 +156,7 @@ TEST(PduCreatorTest, creatingParticipantsPdu){
   char *ids[3];
 
   ids[0] = (char *)"MICKE"; 
-  ids[1]= (char *)"JONAS";
+  ids[1] = (char *)"JONAS";
   ids[2] = (char *)"JOHAN";
   int dataSize = strlen(ids[0]) + strlen(ids[1]) + strlen(ids[2]) + 3;
   char allIds[dataSize];

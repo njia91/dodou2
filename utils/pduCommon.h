@@ -44,18 +44,18 @@ typedef struct {
 } pduNotReq;
 
 typedef struct {
-  uint8_t   opCode;
-  uint16_t  noOfServers;
-  serverInfo *servers;
-} pduSList;
-
-typedef struct {
   uint8_t   *ipAdress;
   uint8_t   noOfClients;
   uint8_t   serverNameLen;
   uint8_t   *serverName;
   uint16_t  port;
 } serverInfo;
+
+typedef struct {
+  uint8_t   opCode;
+  uint16_t  noOfServers;
+  serverInfo *sInfo;
+} pduSList;
 
 typedef struct {
   uint8_t   opCode;

@@ -44,7 +44,7 @@ pduAck *pduReader_ack(uint8_t *buffer){
 
 //Client-nameserver interaction
 
-pduSList *pduReader_SList(){
+pduSList *pduReader_SList(uint8_t *buffer){
 
 }
 

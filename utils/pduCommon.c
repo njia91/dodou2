@@ -8,3 +8,11 @@ uint8_t calculateCheckSum(void *p, int size){
   }
   return ch;
 }
+
+int calculateNoOfWords(int packetSize){
+  if (packetSize % WORD_SIZE == 0){
+    return (packetSize / 4);
+  } else {
+    return (packetSize / 4) + 1;
+  }
+}

@@ -46,6 +46,32 @@ pduAck *pduReader_ack(uint8_t *buffer){
 
 pduSList *pduReader_SList(uint8_t *buffer){
 
+  pduSList *p = (pduSList *) calloc(sizeof(pduSList), 1);
+  int offset;
+  memcpy(&p->opCode, buffer, sizeof(uint8_t));
+  memcpy(&p->noOfServers, buffer + (2 * BYTE_SIZE), sizeof(uint16_t));
+  offset = WORD_SIZE;
+
+  p->noOfServers = htons(p->noOfServers);
+  p->sInfo = calloc(sizeof(serverInfo), p->noOfServers);
+
+  for (int i = 0; i < p->noOfServers; i++){
+    memcpy(&p->sInfo[i].ipAdress, buffer + offset, sizeof(uint32_t));
+    offset += sizeof(uint32_t);
+    memcpy(&p->sInfo[i].port, buffer + offset, sizeof(uint16_t));
+    p->sInfo[i].port = htons(p->sInfo[i].port);
+    offset += sizeof(uint16_t);
+    memcpy(&p->sInfo[i].noOfClients, buffer + offset, sizeof(uint8_t));
+    offset += sizeof(uint8_t);
+    memcpy(&p->sInfo[i].serverNameLen, buffer + offset, sizeof(uint8_t));
+    offset += sizeof(uint8_t);
+    p->sInfo[i].serverName = (uint8_t *) calloc(sizeof(uint8_t), p->sInfo[i].serverNameLen + 1);
+    memcpy(p->sInfo[i].serverName, buffer + offset, p->sInfo[i].serverNameLen + 1);
+    p->sInfo[i].serverName[p->sInfo[i].serverNameLen] = '\0';
+    offset += calculateNoOfWords(p->sInfo[i].serverNameLen) * WORD_SIZE;
+  }
+
+  return p;
 }
 
 //Client-server interaction

@@ -31,6 +31,4 @@ uint8_t *pduCreator_quit();
 
 uint8_t *pduCreator_mess(pduMess *mess);
 
-int calculateNoOfWords(int packetSize);
-
 #endif

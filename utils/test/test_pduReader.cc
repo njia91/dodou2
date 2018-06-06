@@ -6,7 +6,6 @@
 
 #include <string>
 #include <iostream>
-#include <pduCommon.h>
 
 #ifdef __cplusplus
 extern "C"{
@@ -48,6 +47,8 @@ TEST(PduReaderTest, readReqPacket){
   EXPECT_EQ(ret->tcpPort, r.tcpPort);
   EXPECT_EQ(strcmp((char *)ret->serverName, (char *)r.serverName), 0);
 
+  free(retVal);
+  free(ret->serverName);
   free(ret);
 }
 
@@ -73,12 +74,13 @@ TEST(PduReaderTest, readAckPacket){
   EXPECT_EQ(ret->id, r.id);
 
   free(ret);
+  free(retVal);
 }
 
 TEST(PduReaderTest, readSListPacket){
   pduSList r;
 
-  int noOfServers = 2;
+  uint16_t noOfServers = 2;
   uint16_t u16;
 
   uint8_t noClients1 = 4;
@@ -89,62 +91,73 @@ TEST(PduReaderTest, readSListPacket){
 
   serverInfo *s = (serverInfo*)calloc(sizeof(serverInfo), noOfServers);
 
-  uint8_t ip1[4] = {123, 0, 23, 1};
-  uint8_t ip2[4] = {312, 0, 32, 1};
 
-  char *serName1 = (char *)"MickeServer";
-  char *serName2 = (char *)"Andersson";
-  uint8_t serLen1 = strlen(serName1);
-  uint8_t serLen2 = strlen(serName2);
+  uint8_t *serName1 = (uint8_t *)"MickeServer";
+  uint8_t *serName2 = (uint8_t *)"Andersson";
+  uint8_t serLen1 = strlen((char *)serName1);
+  uint8_t serLen2 = strlen((char *)serName2);
 
   s[0].serverName = serName1;
   s[0].noOfClients = noClients1;
   s[0].serverNameLen = serLen1;
-  s[0].ipAdress = ip1;
+  s[0].ipAdress[0] = 132;
+  s[0].ipAdress[1] = 0;
+  s[0].ipAdress[2] = 32;
+  s[0].ipAdress[3] = 1;
+  s[0].port = port1;
 
   s[1].serverName = serName2;
   s[1].noOfClients = noClients2;
   s[1].serverNameLen = serLen2;
-  s[1].ipAdress = ip2;
+  s[0].ipAdress[0] = 123;
+  s[0].ipAdress[1] = 0;
+  s[0].ipAdress[2] = 32;
+  s[0].ipAdress[3] = 1;
+  s[1].port = port2;
 
   r.opCode = SLIST;
-  r.noOfServers = noOfServers;
   r.sInfo = s;
+  r.noOfServers = noOfServers;
+  u16 = htons(noOfServers);
 
-  int bufferSize = 2 + (4 * 2) +serLen1 + serLen2;
+  int noOfWords = 1 + (2 * u16) + calculateNoOfWords(serLen1) + calculateNoOfWords(serLen2);
   int offset = 0;
-  uint8_t *buffer = (uint8_t *)calloc(sizeof(uint8_t), bufferSize);
+  uint8_t *buffer = (uint8_t *)calloc(sizeof(uint8_t), noOfWords * WORD_SIZE);
 
   memcpy(buffer, &(r.opCode), sizeof(uint8_t));
-  memcpy(buffer + (2 * BYTE_SIZE), &(r.noOfServers), sizeof(uint16_t));
+  memcpy(buffer + (2 * BYTE_SIZE), &(u16), sizeof(uint16_t));
   offset = WORD_SIZE;
+
   //For first server
-  memcpy(buffer + WORD_SIZE, &(r.sInfo[0].ipAdress), sizeof(uint32_t));
+  memcpy(buffer + offset, &(r.sInfo[0].ipAdress), sizeof(uint32_t));
   offset += WORD_SIZE;
   u16 = htons(r.sInfo[0].port);
-  memcpy((buffer + offset, &(u16), sizeof(uint16_t));
+  memcpy(buffer + offset, &(u16), sizeof(uint16_t));
   offset += sizeof(uint16_t);
   memcpy(buffer + offset, &(r.sInfo[0].noOfClients), sizeof(uint8_t));
   offset += sizeof(uint8_t);
   memcpy(buffer + offset, &(r.sInfo[0].serverNameLen), sizeof(uint8_t));
   offset += sizeof(uint8_t);
-  memcpy(buffer + offset, &(r.sInfo[0].serverName), r.sInfo[0].serverNameLen);
-  offset += r.sInfo[1].serverNameLen;
+  memcpy(buffer + offset, (r.sInfo[0].serverName), r.sInfo[0].serverNameLen);
+  offset += calculateNoOfWords((int)r.sInfo[0].serverNameLen) * WORD_SIZE;
+
   //For second server
-  memcpy(buffer + WORD_SIZE, &(r.sInfo[1].ipAdress), sizeof(uint32_t));
+  memcpy(buffer + offset, &(r.sInfo[1].ipAdress), sizeof(uint32_t));
   offset += WORD_SIZE;
   u16 = htons(r.sInfo[1].port);
-  memcpy((buffer + offset, &(u16), sizeof(uint16_t));
+  memcpy(buffer + offset, &(u16), sizeof(uint16_t));
   offset += sizeof(uint16_t);
   memcpy(buffer + offset, &(r.sInfo[1].noOfClients), sizeof(uint8_t));
   offset += sizeof(uint8_t);
   memcpy(buffer + offset, &(r.sInfo[1].serverNameLen), sizeof(uint8_t));
   offset += sizeof(uint8_t);
-  memcpy(buffer + offset, &(r.sInfo[1].serverName), r.sInfo[1].serverNameLen);
+  memcpy(buffer + offset, (r.sInfo[1].serverName), r.sInfo[1].serverNameLen);
   offset += r.sInfo[1].serverNameLen;
 
-  pduSList *ret = pduReader_SList(buffer);
+  pduSList *ret = NULL;
+  ret = pduReader_SList(buffer);
 
+  ASSERT_TRUE(ret);
 
   EXPECT_EQ(ret->opCode, SLIST);
   EXPECT_EQ(ret->noOfServers, r.noOfServers);
@@ -153,15 +166,25 @@ TEST(PduReaderTest, readSListPacket){
   EXPECT_EQ(ret->sInfo[0].serverNameLen, s[0].serverNameLen);
   EXPECT_EQ(ret->sInfo[0].port, s[0].port);
   EXPECT_EQ(strcmp((char*)ret->sInfo[0].serverName, (char*)s[0].serverName), 0);
-  EXPECT_EQ(strcmp((char*)ret->sInfo[0].ipAdress, (char*)s[0].ipAdress), 0);
+  for (int i = 0; i < 4; i++){
+    EXPECT_EQ(ret->sInfo[0].ipAdress[i], s[0].ipAdress[i]);
+  }
+
 
   EXPECT_EQ(ret->sInfo[1].noOfClients, s[1].noOfClients);
   EXPECT_EQ(ret->sInfo[1].serverNameLen, s[1].serverNameLen);
-  EXPECT_EQ(ret->sInfo[1].port, s[0].port);
-  EXPECT_EQ(strcmp((char*)ret->sInfo[1].serverName, (char*)s[1].serverName), 0);
-  EXPECT_EQ(strcmp((char*)ret->sInfo[1].ipAdress, (char*)s[1].ipAdress), 0);
+  EXPECT_EQ(ret->sInfo[1].port, s[1].port);
+  EXPECT_EQ(strcmp((char *)ret->sInfo[1].serverName, (char *)s[1].serverName), 0);
+  for (int i = 0; i < 4; i++){
+    EXPECT_EQ(ret->sInfo[1].ipAdress[i], s[1].ipAdress[i]);
+  }
 
+  for (int i = 0; i < noOfServers; i++){
+    free(ret->sInfo[i].serverName);
+  }
+  free(ret->sInfo);
   free(ret);
+  free(s);
   free(buffer);
 
 }

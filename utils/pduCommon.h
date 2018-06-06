@@ -44,7 +44,7 @@ typedef struct {
 } pduNotReq;
 
 typedef struct {
-  uint8_t   *ipAdress;
+  uint8_t   ipAdress[4];
   uint8_t   noOfClients;
   uint8_t   serverNameLen;
   uint8_t   *serverName;
@@ -95,5 +95,7 @@ typedef struct {
 typedef pduPJoin pduPLeave;
 
 uint8_t calculateCheckSum(void *p, int size);
+
+int calculateNoOfWords(int packetSize);
 
 #endif

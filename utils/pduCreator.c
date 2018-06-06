@@ -151,11 +151,3 @@ uint8_t *pduCreator_mess(pduMess *mess){
 
   return pduBuffer;
 }
-
-int calculateNoOfWords(int packetSize){
-  if (packetSize % WORD_SIZE == 0){
-    return (packetSize / 4);
-  } else {
-    return (packetSize / 4) + 1;
-  }
-}

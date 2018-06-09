@@ -28,7 +28,7 @@ class PduReaderTest : public testing::Test
 };
 
 
-TEST(PduReaderTest, readReqPacket){
+TEST(PduReaderTest, read_reqPacket){
   pduReq r;
   char *serName = (char *)"testHost";
   uint8_t serLen = strlen(serName);
@@ -52,7 +52,7 @@ TEST(PduReaderTest, readReqPacket){
   free(ret);
 }
 
-TEST(PduReaderTest, readAckPacket){
+TEST(PduReaderTest, read_ackPacket){
   pduAck r;
   char *serName = (char *)"testHost";
   uint8_t serLen = strlen(serName);
@@ -77,7 +77,7 @@ TEST(PduReaderTest, readAckPacket){
   free(retVal);
 }
 
-TEST(PduReaderTest, readSListPacket){
+TEST(PduReaderTest, read_sListPacket){
   pduSList r;
 
   uint16_t noOfServers = 2;
@@ -186,5 +186,100 @@ TEST(PduReaderTest, readSListPacket){
   free(ret);
   free(s);
   free(buffer);
-
 }
+
+TEST(PduReaderTest, read_JoinPdu){
+  pduJoin r;
+  char str[] = "Micke";
+
+  r.opCode = JOIN;
+  r.id = (uint8_t *) str;
+  r.idSize = strlen((char * ) r.id);
+
+  uint8_t *retVal = pduCreator_join(&r);
+
+  pduJoin *ret = pduReader_join(retVal);
+
+
+  EXPECT_EQ(ret->opCode, JOIN);
+  EXPECT_EQ(r.idSize, ret->idSize);
+  EXPECT_EQ(strcmp((char *) ret->id, (char *)r.id), 0);
+
+  free(ret->id);
+  free(ret);
+  free(retVal);
+}
+
+TEST(PduReaderTest, read_pJoinPdu){
+  pduPJoin r;
+  char str[] = "Micke";
+  r.opCode = PJOIN;
+  r.id = (uint8_t *) str;
+  r.idSize = strlen((char *) r.id);
+  r.timeStamp = 34567;
+
+  uint8_t *retVal = pduCreator_pJoin(&r);
+
+  pduPJoin *ret = pduReader_pJoin(retVal);
+
+  EXPECT_EQ(ret->opCode, PJOIN);
+  EXPECT_EQ(r.idSize, ret->idSize);
+  EXPECT_EQ(strcmp((char *) ret->id, (char *)r.id), 0);
+  EXPECT_EQ(r.timeStamp, ret->timeStamp);
+
+  free(ret->id);
+  free(ret);
+  free(retVal);
+}
+
+TEST(PduReaderTest, read_pLeavePdu){
+  pduPLeave r;
+  char str[] = "Micke";
+  r.opCode = PJOIN;
+  r.id = (uint8_t *) str;
+  r.idSize = strlen((char *) r.id);
+  r.timeStamp = 34567;
+
+  uint8_t *retVal = pduCreator_pLeave(&r);
+
+  pduPLeave *ret = pduReader_pleave(retVal);
+
+  EXPECT_EQ(ret->opCode, PJOIN);
+  EXPECT_EQ(r.idSize, ret->idSize);
+  EXPECT_EQ(strcmp((char *) ret->id, (char *)r.id), 0);
+  EXPECT_EQ(r.timeStamp, ret->timeStamp);
+
+  free(ret->id);
+  free(ret);
+  free(retVal);
+}
+
+TEST(PduReaderTest, read_participants){
+  pduParticipants r;
+  char *ids[2];
+
+  ids[0] = (char *)"Micke";
+  ids[1] = (char *)"Jonas";
+
+  r.opCode = PARTICIPANTS;
+  r.noOfIds = 2;
+  r.ids = (uint8_t **)ids;
+
+
+  uint8_t *retVal = pduCreator_participants(&r);
+
+  pduParticipants *ret = pduReader_participants(retVal);
+
+  EXPECT_EQ(ret->opCode, PARTICIPANTS);
+  EXPECT_EQ(r.noOfIds, ret->noOfIds);
+  for (int i = 0; i < ret->noOfIds; i++){
+    EXPECT_EQ(strcmp((char *) ret->ids[i], (char *)r.ids[i]), 0);
+    free(ret->ids[i]);
+  }
+
+
+  free(ret->ids);
+  free(ret);
+  free(retVal);
+}
+

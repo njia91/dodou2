@@ -153,25 +153,16 @@ TEST(PduCreatorTest, creatingPJoinPdu){
 
 TEST(PduCreatorTest, creatingParticipantsPdu){
   pduParticipants p;
-  char *ids[3];
+  char *str[3];
 
-  ids[0] = (char *)"MICKE"; 
-  ids[1] = (char *)"JONAS";
-  ids[2] = (char *)"JOHAN";
-  int dataSize = strlen(ids[0]) + strlen(ids[1]) + strlen(ids[2]) + 3;
-  char allIds[dataSize];
-
-  memset(allIds, 0, dataSize);
-  memcpy(allIds, ids[0], strlen(ids[0]) + 1);
-  memcpy(allIds + strlen(ids[0]) + 1, ids[1], strlen(ids[1]) + 1);
-  memcpy(allIds + strlen(ids[0]) + strlen(ids[1]) + 2, ids[2], strlen(ids[2]) + 1);
-  
+  str[0] = (char *)"MICKE";
+  str[1] = (char *)"JONAS";
+  str[2] = (char *)"JOHAN";
 
 
   p.opCode = PARTICIPANTS;
   p.noOfIds = 3;
-  p.dataSize = dataSize;
-  p.ids = (uint8_t *)allIds;
+  p.ids = (uint8_t **)str;
 
   uint8_t *retVal = pduCreator_participants(&p);
 
@@ -193,6 +184,7 @@ TEST(PduCreatorTest, creatingParticipantsPdu){
   int idNo = 0;
   int pos = 0;
   while(idNo < retNoOfIds){
+    // To find where one ID ends...
     do{
       i++;
     } while(retData[i] != '\0');
@@ -204,11 +196,16 @@ TEST(PduCreatorTest, creatingParticipantsPdu){
 
   EXPECT_EQ(retOpCode, p.opCode);
   EXPECT_EQ(retNoOfIds, p.noOfIds);
-  EXPECT_EQ(retDataSize, p.dataSize);
+
+  int dataSize = 0;
   for(int i = 0; i < retNoOfIds; i++){
-    EXPECT_EQ(strcmp(retIds[i], ids[i]), 0);
+    EXPECT_EQ(strcmp(retIds[i], str[i]), 0);
+    dataSize += strlen(retIds[i]) + 1;
+    free(retIds[i]);
   }
-  
+
+  EXPECT_EQ(retDataSize, dataSize);
+
   free(retVal);
 }
 
@@ -221,7 +218,7 @@ TEST(PduCreatorTest, creatingPLeavePdu){
   p.timeStamp = (uint32_t)time(NULL);
   p.id = (uint8_t *)id;
 
-  uint8_t *retVal = pduCreator_pleave(&p);
+  uint8_t *retVal = pduCreator_pLeave(&p);
 
   uint8_t retOpCode;
   uint8_t retIdSize;

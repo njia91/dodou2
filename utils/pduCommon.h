@@ -66,8 +66,7 @@ typedef struct {
 typedef struct {
   uint8_t   opCode;
   uint8_t   noOfIds;
-  uint8_t   dataSize;
-  uint8_t   *ids;
+  uint8_t   **ids;
 } pduParticipants;
 
 typedef struct {

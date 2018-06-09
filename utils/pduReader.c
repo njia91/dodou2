@@ -52,14 +52,14 @@ pduSList *pduReader_SList(uint8_t *buffer){
   memcpy(&p->noOfServers, buffer + (2 * BYTE_SIZE), sizeof(uint16_t));
   offset = WORD_SIZE;
 
-  p->noOfServers = htons(p->noOfServers);
+  p->noOfServers = ntohs(p->noOfServers);
   p->sInfo = calloc(sizeof(serverInfo), p->noOfServers);
 
   for (int i = 0; i < p->noOfServers; i++){
     memcpy(&p->sInfo[i].ipAdress, buffer + offset, sizeof(uint32_t));
     offset += sizeof(uint32_t);
     memcpy(&p->sInfo[i].port, buffer + offset, sizeof(uint16_t));
-    p->sInfo[i].port = htons(p->sInfo[i].port);
+    p->sInfo[i].port = ntohs(p->sInfo[i].port);
     offset += sizeof(uint16_t);
     memcpy(&p->sInfo[i].noOfClients, buffer + offset, sizeof(uint8_t));
     offset += sizeof(uint8_t);
@@ -75,13 +75,64 @@ pduSList *pduReader_SList(uint8_t *buffer){
 }
 
 //Client-server interaction
-pduJoin *pduReader_join(uint8_t *buffer);
+pduJoin *pduReader_join(uint8_t *buffer){
+  pduJoin *p = calloc(sizeof(pduJoin), 1);
 
-pduPJoin *pduReader_pJoin(uint8_t *buffer);
+  memcpy(&p->opCode, buffer, sizeof(uint8_t));
+  memcpy(&p->idSize, buffer + BYTE_SIZE, sizeof(uint8_t));
+  p->id = calloc(sizeof(uint8_t), p->idSize + 1);
+  memcpy(p->id, buffer + WORD_SIZE, p->idSize);
+  p->id[p->idSize] = '\0';
 
-pduPLeave *pduReader_pleave(uint8_t *buffer);
+  return p;
+}
 
-pduParticipants *pduReader_participants(uint8_t *buffer);
+pduPJoin *pduReader_pJoin(uint8_t *buffer){
+  pduPJoin *p = calloc(sizeof(pduPJoin), 1);
+
+  memcpy(&p->opCode, buffer, sizeof(uint8_t));
+  memcpy(&p->idSize, buffer + BYTE_SIZE, sizeof(uint8_t));
+  memcpy(&p->timeStamp, buffer + WORD_SIZE, sizeof(uint32_t));
+  p->timeStamp = ntohl(p->timeStamp);
+  p->id = calloc(sizeof(uint8_t), p->idSize + 1);
+  memcpy(p->id, buffer + (2 * WORD_SIZE), p->idSize);
+  p->id[p->idSize] = '\0';
+
+  return p;
+}
+
+pduPLeave *pduReader_pleave(uint8_t *buffer){
+  return pduReader_pJoin(buffer);
+}
+
+pduParticipants *pduReader_participants(uint8_t *buffer){
+  pduParticipants *p =  calloc(sizeof(pduParticipants), 1);
+  uint16_t dataSize;
+
+  memcpy(&p->opCode, buffer, sizeof(uint8_t));
+  memcpy(&p->noOfIds, buffer + BYTE_SIZE, sizeof(uint8_t));
+  memcpy(&dataSize, buffer + (2 * BYTE_SIZE), sizeof(uint16_t));
+  p->ids = calloc(sizeof(uint8_t *), p->noOfIds);
+  dataSize = htons(dataSize);
+  buffer += WORD_SIZE;
+  int idNo = 0;
+  int pos = 0;
+  int offset = 0;
+  while(idNo < p->noOfIds){
+    // To find where one ID ends...
+    do{
+      pos++;
+    } while(buffer[pos] != '\0');
+    pos = pos + 1;
+    p->ids[idNo] = (char *)calloc(sizeof(uint8_t), pos);
+    memcpy(p->ids[idNo], buffer + offset, pos);
+    offset += pos;
+    idNo++;
+  }
+
+
+  return p;
+}
 
 pduQuit *pduReader_quit();
 

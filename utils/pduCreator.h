@@ -23,7 +23,7 @@ uint8_t *pduCreator_join(pduJoin *join);
 
 uint8_t *pduCreator_pJoin(pduPJoin *pjoin);
 
-uint8_t *pduCreator_pleave(pduPLeave *pLeave);
+uint8_t *pduCreator_pLeave(pduPLeave *pLeave);
 
 uint8_t *pduCreator_participants(pduParticipants *par);
 

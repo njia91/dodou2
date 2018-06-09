@@ -97,21 +97,35 @@ uint8_t *pduCreator_participants(pduParticipants *par){
     return NULL;
   }
 
-  int packetSize = (2 * WORD_SIZE) + par->dataSize;
+  uint16_t dataSize = 0;
+  for( int i = 0; i < par->noOfIds; i ++){
+    dataSize += strlen((char *)par->ids[i]) + 1;
+  }
+
+  int packetSize = (2 * WORD_SIZE) + dataSize;
   int noOfWords = calculateNoOfWords(packetSize);
 
+  dataSize = htons(dataSize);
+  uint16_t strLen = 0;
+
   uint8_t *pduBuffer = calloc(sizeof(uint8_t), noOfWords * WORD_SIZE);
-  uint16_t u16 = htons(par->dataSize);
 
   memcpy(pduBuffer, &(par->opCode), sizeof(uint8_t));
   memcpy(pduBuffer + BYTE_SIZE, &(par->noOfIds), sizeof(uint8_t));
-  memcpy(pduBuffer + (2 *BYTE_SIZE) , &u16, sizeof(uint16_t));
-  memcpy(pduBuffer + WORD_SIZE, par->ids, par->dataSize);
+  memcpy(pduBuffer + (2 *BYTE_SIZE) , &dataSize, sizeof(uint16_t));
+
+  int offset = 0;
+  for( int i = 0; i < par->noOfIds; i ++){
+    strLen = strlen((char *)par->ids[i]) + 1;
+    memcpy(pduBuffer + WORD_SIZE + offset, par->ids[i], strLen);
+    offset += strLen;
+  }
+
 
   return pduBuffer;
 }
 
-uint8_t *pduCreator_pleave(pduPLeave *pLeave){
+uint8_t *pduCreator_pLeave(pduPLeave *pLeave){
   return pduCreator_pJoin(pLeave);
 }
 

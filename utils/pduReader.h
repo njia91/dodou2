@@ -26,7 +26,7 @@ pduPLeave *pduReader_pleave(uint8_t *buffer);
 
 pduParticipants *pduReader_participants(uint8_t *buffer);
 
-pduQuit *pduReader_quit();
+pduQuit *pduReader_quit(uint8_t *buffer);
 
 pduMess *pduReader_mess(uint8_t *buffer);
 

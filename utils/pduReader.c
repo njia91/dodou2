@@ -134,6 +134,11 @@ pduParticipants *pduReader_participants(uint8_t *buffer){
   return p;
 }
 
-pduQuit *pduReader_quit();
+pduQuit *pduReader_quit(uint8_t *buffer){
+  pduQuit *p = calloc(sizeof(pduQuit), 1);
+  p->opCode = buffer[0];
+}
 
-pduMess *pduReader_mess(uint8_t *buffer);
+pduMess *pduReader_mess(uint8_t *buffer){
+
+}

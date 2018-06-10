@@ -131,7 +131,7 @@ uint8_t *pduCreator_pLeave(pduPLeave *pLeave){
 
 uint8_t *pduCreator_quit(){
   uint8_t *pduBuffer = calloc(sizeof(uint8_t), WORD_SIZE);
-  pduBuffer[0] = GETLIST;
+  pduBuffer[0] = QUIT;
   return pduBuffer;
 }
 

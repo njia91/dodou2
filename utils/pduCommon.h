@@ -73,7 +73,7 @@ typedef struct {
   uint8_t   opCode;
   uint8_t   idSize;
   uint8_t   checkSum;
-  uint8_t   messageSize;
+  uint16_t   messageSize;
   uint8_t   *message;
   uint8_t   *id;
   uint32_t  timeStamp;

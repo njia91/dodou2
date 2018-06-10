@@ -265,9 +265,7 @@ TEST(PduReaderTest, read_participants){
   r.noOfIds = 2;
   r.ids = (uint8_t **)ids;
 
-
   uint8_t *retVal = pduCreator_participants(&r);
-
   pduParticipants *ret = pduReader_participants(retVal);
 
   EXPECT_EQ(ret->opCode, PARTICIPANTS);
@@ -277,9 +275,51 @@ TEST(PduReaderTest, read_participants){
     free(ret->ids[i]);
   }
 
-
   free(ret->ids);
   free(ret);
   free(retVal);
 }
 
+TEST(PduReaderTest, read_quit){
+  uint8_t *retVal = pduCreator_quit();
+  pduQuit *ret = pduReader_quit(retVal);
+  EXPECT_EQ(ret->opCode, QUIT);
+  free(ret);
+  free(retVal);
+}
+
+TEST(PduReaderTest, read_participants){
+  pduMess r;
+
+  r.opCode = MESS;
+  r.id = (uint8_t *) "Micke";
+  r.message = (uint8_t *)"Snart är vi klara!!";
+  r.timeStamp = 1337;
+  r.messageSize = strlen((char *) r.message);
+  r.idSize = strlen((char *) r.id);
+
+  uint8_t checksum = calculateCheckSum((void*)r.opCode, 1);
+  checksum += calculateCheckSum((void*)r.idSize, 1);
+  checksum += calculateCheckSum((void*)r.messageSize, 2);
+  checksum += calculateCheckSum((void*)r.timeStamp, 4);
+  checksum += calculateCheckSum((void *)r.message, r.messageSize);
+  checksum += calculateCheckSum((void *)r.id, r.idSize);
+
+  uint8_t *retVal = pduCreator_mess(&r);
+  pduMess *ret = pduReader_mess(retVal);
+
+
+  EXPECT_EQ(ret->opCode, MESS);
+  EXPECT_EQ(r.timeStamp, ret->timeStamp);
+  EXPECT_EQ(r.idSize, ret->idSize);
+  EXPECT_EQ(r.messageSize, ret->messageSize);
+  EXPECT_EQ(strcmp((char *)r.message, (char *) ret->message), 0);
+  EXPECT_EQ(strcmp((char *)r.id, (char *) ret->id), 0);
+
+  int res = ~(checksum + ret->checkSum);
+  EXPECT_FALSE(res);
+
+
+  free(ret);
+  free(retVal);
+}

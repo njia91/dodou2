@@ -140,5 +140,28 @@ pduQuit *pduReader_quit(uint8_t *buffer){
 }
 
 pduMess *pduReader_mess(uint8_t *buffer){
+  pduMess *p = calloc(sizeof(pduMess), 1);
+  int offset = 0;
 
+  memcpy(&p->opCode, buffer, sizeof(uint8_t));
+  offset += 2 * BYTE_SIZE;
+  memcpy(&p->idSize, buffer + offset, sizeof(uint8_t));
+  offset += BYTE_SIZE;
+  memcpy(&p->checkSum, buffer + offset, sizeof(uint8_t));
+  offset += BYTE_SIZE;
+  memcpy(&p->messageSize, buffer + offset, sizeof(uint16_t));
+  offset += WORD_SIZE;
+  p->messageSize = htons(p->messageSize);
+  memcpy(&p->timeStamp, buffer + offset, sizeof(uint32_t));
+  p->timeStamp = htonl(p->timeStamp);
+  offset += WORD_SIZE;
+  p->message = calloc(sizeof(uint8_t), p->messageSize + 1);
+  memcpy(p->message, buffer + offset, (p->messageSize));
+  p->message[p->messageSize] = '\0';
+  offset += calculateNoOfWords(p->messageSize) * WORD_SIZE;
+  p->id = calloc(sizeof(uint8_t), p->idSize + 1);
+  memcpy(p->id, buffer + offset, p->idSize +1);
+  p->id[p->idSize] = '\0';
+
+  return p;
 }

@@ -288,7 +288,7 @@ TEST(PduReaderTest, read_quit){
   free(retVal);
 }
 
-TEST(PduReaderTest, read_participants){
+TEST(PduReaderTest, read_mess){
   pduMess r;
 
   r.opCode = MESS;
@@ -298,16 +298,23 @@ TEST(PduReaderTest, read_participants){
   r.messageSize = strlen((char *) r.message);
   r.idSize = strlen((char *) r.id);
 
-  uint8_t checksum = calculateCheckSum((void*)r.opCode, 1);
-  checksum += calculateCheckSum((void*)r.idSize, 1);
-  checksum += calculateCheckSum((void*)r.messageSize, 2);
-  checksum += calculateCheckSum((void*)r.timeStamp, 4);
+  uint8_t checksum = calculateCheckSum((void*)&r.opCode, 1);
+  checksum += calculateCheckSum((void*)&r.idSize, 1);
+  checksum += calculateCheckSum((void*)&r.messageSize, 2);
+  checksum += calculateCheckSum((void*)&r.timeStamp, 4);
   checksum += calculateCheckSum((void *)r.message, r.messageSize);
   checksum += calculateCheckSum((void *)r.id, r.idSize);
+  checksum = ~checksum;
 
   uint8_t *retVal = pduCreator_mess(&r);
   pduMess *ret = pduReader_mess(retVal);
 
+  uint8_t retChecksum = calculateCheckSum((void*) &ret->opCode, 1);
+  retChecksum += calculateCheckSum((void*) &ret->idSize, 1);
+  retChecksum += calculateCheckSum((void*) &ret->messageSize, 2);
+  retChecksum += calculateCheckSum((void*) &ret->timeStamp, 4);
+  retChecksum += calculateCheckSum((void *) ret->message,  ret->messageSize);
+  retChecksum += calculateCheckSum((void *) ret->id, ret->idSize);
 
   EXPECT_EQ(ret->opCode, MESS);
   EXPECT_EQ(r.timeStamp, ret->timeStamp);
@@ -316,10 +323,15 @@ TEST(PduReaderTest, read_participants){
   EXPECT_EQ(strcmp((char *)r.message, (char *) ret->message), 0);
   EXPECT_EQ(strcmp((char *)r.id, (char *) ret->id), 0);
 
-  int res = ~(checksum + ret->checkSum);
+  uint8_t res = ~(retChecksum + ret->checkSum);
   EXPECT_FALSE(res);
 
 
+  free(ret->message);
+  free(ret->id);
   free(ret);
   free(retVal);
 }
+
+
+

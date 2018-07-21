@@ -124,7 +124,7 @@ pduParticipants *pduReader_participants(uint8_t *buffer){
       pos++;
     } while(buffer[pos] != '\0');
     pos = pos + 1;
-    p->ids[idNo] = (char *)calloc(sizeof(uint8_t), pos);
+    p->ids[idNo] = (uint8_t *)calloc(sizeof(uint8_t), pos);
     memcpy(p->ids[idNo], buffer + offset, pos);
     offset += pos;
     idNo++;
@@ -137,6 +137,8 @@ pduParticipants *pduReader_participants(uint8_t *buffer){
 pduQuit *pduReader_quit(uint8_t *buffer){
   pduQuit *p = calloc(sizeof(pduQuit), 1);
   p->opCode = buffer[0];
+
+  return p;
 }
 
 pduMess *pduReader_mess(uint8_t *buffer){

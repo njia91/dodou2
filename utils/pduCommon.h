@@ -91,7 +91,10 @@ typedef struct {
 } pduQuit;
 
 
+
 typedef pduPJoin pduPLeave;
+typedef pduQuit pduGetList;
+
 
 uint8_t calculateCheckSum(void *p, int size);
 

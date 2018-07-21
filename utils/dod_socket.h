@@ -4,6 +4,7 @@
 
 #ifndef DODOU2_TCP_SOCKET_H
 #define DODOU2_TCP_SOCKET_H
+#define _DEFAULT_SOURCE
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,6 +12,7 @@
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <netinet/in.h>
+#include <netdb.h>
 #include <errno.h>
 #include <memory.h>
 

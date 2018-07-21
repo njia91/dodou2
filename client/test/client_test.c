@@ -2,58 +2,74 @@
 // Created by njia on 2018-07-20.
 //
 
-#include "client.h"
 #include <stdarg.h>
 #include <stddef.h>
 #include <setjmp.h>
 #include <cmocka.h>
+#include <stdio.h>
 
-#include <dod_socket.h>
 #include "dod_socket.h"
+#include "client.h"
 
-int mock_createSocket(struct addrinfo **res){
+
+//extern int createSocket(struct addrinfo **res);
+
+int createSocket(struct addrinfo **res){
   return (int)mock();
 }
 
-int mock_bindSocket(int socket_fd, struct addrinfo **res){
+int bindSocket(int socket_fd, struct addrinfo **res){
   return (int)mock();
 }
 
-int mock_connectToServer(int socket_fd, struct addrinfo **res){
+int connectToServer(int socket_fd, struct addrinfo **res){
+  check_expected(socket_fd);
   return (int)mock();
 }
 
 
-int mock_acceptConnections(int socket_fd, void (*fPtr)()){
+int acceptConnections(int socket_fd, void (*fPtr)()){
   return (int)mock();
 }
 
-int mock_markSocketAsPassive(int socket_fd){
+int markSocketAsPassive(int socket_fd){
   return (int)mock();
 }
 
-int mock_setsocketopt(int socket_fd, int lvl, int opt){
+int setsocketopt(int socket_fd, int lvl, int opt){
   return (int)mock();
 }
 
-int mock_setToNonBlocking(int socket_fd){
+int setToNonBlocking(int socket_fd){
   return (int)mock();
 }
 
-int mock_writeToSocket(int socket_fd, char *packet){
+int writeToSocket(int socket_fd, char *packet){
   return (int)mock();
 }
 
-int mock_readFromSocket(int socket_fd, char *packet){
+int readFromSocket(int socket_fd, char *packet){
   packet = (char *)mock();
   return (int)mock();
 }
 
+void clientTest_connectToNameServer(void **state)
+{
+// Return a single customer ID when mock_query_database() is called.
+  int fd = 545;
+  will_return(createSocket, fd);
+  will_return(connectToServer, 0);
+  expect_value(connectToServer, socket_fd, fd);
+
+  will_return(writeToSocket, 0);
+
+  char *argv[5] = {"client", "ns", "123.0.0.1", "1234"};
+  client_main(4, argv);
+}
+
 
 int main(int argc, char* argv[]) {
-//  const UnitTest tests[] = { unit_test(test_connect_to_customer_database),
-//                             unit_test(fail_connect_to_customer_database),
-//                             unit_test(test_get_customer_id_by_name), };
-//  return run_tests(tests);
+  const struct CMUnitTest tests[] = { cmocka_unit_test(clientTest_connectToNameServer)};
+  return cmocka_run_group_tests(tests, NULL, NULL);
   return 0;
 }

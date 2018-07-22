@@ -44,31 +44,46 @@ pduAck *pduReader_ack(uint8_t *buffer){
 
 //Client-nameserver interaction
 
-pduSList *pduReader_SList(uint8_t *buffer){
+pduSList *pduReader_SList(int socket_fd){
 
   pduSList *p = (pduSList *) calloc(sizeof(pduSList), 1);
-  int offset;
-  memcpy(&p->opCode, buffer, sizeof(uint8_t));
-  memcpy(&p->noOfServers, buffer + (2 * BYTE_SIZE), sizeof(uint16_t));
-  offset = WORD_SIZE;
+  uint8_t buffer[4];
+  p->opCode = SLIST;
+  int offset = 0;
+  readFromSocket(socket_fd, buffer, 3 * BYTE_SIZE);
 
+  if (buffer[0] != 0){
+    fprintf(stderr, "Invalid padding for SList Packet \n");
+    return NULL;
+  }
+
+  memcpy(&p->noOfServers, buffer + (BYTE_SIZE), sizeof(uint16_t));
   p->noOfServers = ntohs(p->noOfServers);
+
   p->sInfo = calloc(sizeof(serverInfo), p->noOfServers);
 
   for (int i = 0; i < p->noOfServers; i++){
-    memcpy(&p->sInfo[i].ipAdress, buffer + offset, sizeof(uint32_t));
-    offset += sizeof(uint32_t);
-    memcpy(&p->sInfo[i].port, buffer + offset, sizeof(uint16_t));
+    readFromSocket(socket_fd, buffer, WORD_SIZE);
+    memcpy(&p->sInfo[i].ipAdress, buffer, sizeof(uint32_t));
+
+    readFromSocket(socket_fd, buffer, WORD_SIZE);
+    memcpy(&p->sInfo[i].port, buffer, sizeof(uint16_t));
     p->sInfo[i].port = ntohs(p->sInfo[i].port);
-    offset += sizeof(uint16_t);
-    memcpy(&p->sInfo[i].noOfClients, buffer + offset, sizeof(uint8_t));
-    offset += sizeof(uint8_t);
-    memcpy(&p->sInfo[i].serverNameLen, buffer + offset, sizeof(uint8_t));
-    offset += sizeof(uint8_t);
+    memcpy(&p->sInfo[i].noOfClients, buffer + (2 * BYTE_SIZE), sizeof(uint8_t));
+    memcpy(&p->sInfo[i].serverNameLen, buffer + (3 * BYTE_SIZE), sizeof(uint8_t));
+
     p->sInfo[i].serverName = (uint8_t *) calloc(sizeof(uint8_t), p->sInfo[i].serverNameLen + 1);
-    memcpy(p->sInfo[i].serverName, buffer + offset, p->sInfo[i].serverNameLen + 1);
+
+    for (int i = 0; i < calculateNoOfWords(p->sInfo[i].serverNameLen); i ++){
+      readFromSocket(socket_fd, buffer, WORD_SIZE);
+      // The null-terminator indicates end of of message.
+      for (int j = 0; buffer[j] != '\0' && j < 4; j++){
+        memcpy(p->sInfo[i].serverName + offset, buffer, BYTE_SIZE);
+        offset++;
+      }
+    }
     p->sInfo[i].serverName[p->sInfo[i].serverNameLen] = '\0';
-    offset += calculateNoOfWords(p->sInfo[i].serverNameLen) * WORD_SIZE;
+
   }
 
   return p;

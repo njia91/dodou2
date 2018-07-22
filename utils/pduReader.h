@@ -6,6 +6,7 @@
 #define DODOU2_PDUREADER_H
 
 #include "pduCommon.h"
+#include "dod_socket.h"
 
 //Server-nameserver interaction
 pduReq *pduReader_req(uint8_t *buffer);
@@ -15,7 +16,7 @@ pduAlive *pduReader_alive(uint8_t *buffer);
 //Client-nameserver interaction
 pduAck *pduReader_ack(uint8_t *buffer);
 
-pduSList *pduReader_SList(uint8_t *buffer);
+pduSList *pduReader_SList(int socket_fd);
 
 //Client-server interaction
 pduJoin *pduReader_join(uint8_t *buffer);

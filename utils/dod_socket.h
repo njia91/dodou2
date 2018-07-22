@@ -4,7 +4,6 @@
 
 #ifndef DODOU2_TCP_SOCKET_H
 #define DODOU2_TCP_SOCKET_H
-#define _DEFAULT_SOURCE
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,9 +36,9 @@ int setsocketopt(int socket_fd, int lvl, int opt);
 
 int setToNonBlocking(int socket_fd);
 
-int writeToSocket(int socket_fd, char *packet);
+int writeToSocket(int socket_fd, uint8_t *packet, int size);
 
-int readFromSocket(int socket_fd, char *packet);
+int readFromSocket(int socket_fd, uint8_t *buffer, int size);
 
 #endif //DODOU2_TCP_SOCKET_H
 

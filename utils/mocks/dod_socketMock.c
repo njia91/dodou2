@@ -7,41 +7,42 @@
 #include <cmocka.h>
 #include <dod_socket.h>
 
-int mock_createSocket(struct addrinfo **res){
+
+int createSocket(struct addrinfo **res){
   return (int)mock();
 }
 
-int mock_bindSocket(int socket_fd, struct addrinfo **res){
+int bindSocket(int socket_fd, struct addrinfo **res){
   return (int)mock();
 }
 
-int mock_connectToServer(int socket_fd, struct addrinfo **res){
+int connectToServer(int socket_fd, struct addrinfo **res){
+  check_expected(socket_fd);
   return (int)mock();
 }
 
 
-int mock_acceptConnections(int socket_fd, void (*fPtr)()){
+int acceptConnections(int socket_fd, void (*fPtr)()){
   return (int)mock();
 }
 
-int mock_markSocketAsPassive(int socket_fd){
+int markSocketAsPassive(int socket_fd){
   return (int)mock();
 }
 
-int mock_setsocketopt(int socket_fd, int lvl, int opt){
+int setsocketopt(int socket_fd, int lvl, int opt){
   return (int)mock();
 }
 
-int mock_setToNonBlocking(int socket_fd){
+int setToNonBlocking(int socket_fd){
   return (int)mock();
 }
 
-int mock_writeToSocket(int socket_fd, char *packet){
+int writeToSocket(int socket_fd, uint8_t *packet, int size) {
   return (int)mock();
 }
 
-int mock_readFromSocket(int socket_fd, char *packet){
-  packet = (char *)mock();
+int readFromSocket(int socket_fd, uint8_t *buffer, int size) {
+  buffer = (char *)mock();
   return (int)mock();
 }
-

@@ -8,6 +8,7 @@
 #include "client.h"
 #include <stdio.h>
 
+
 /*
 int main(int argc, char **argv){
   printf("Tjoo heeej! \n");
@@ -63,13 +64,19 @@ int establishConnectionWithNs(clientData *cData){
   return nameserver_fd;
 
 }
-//pduGetList getList;
-//getList.opCode = GETLIST;
-
-//   ret = writeToSocket(nameserver_fd, (char *) &getList.opCode);
 
 int getServerList(int nameserver_fd){
+/*  pduGetList getList;
+  getList.opCode = GETLIST;
 
+  int ret = writeToSocket(nameserver_fd, (char *) &getList.opCode, 1);
+
+  if (ret == -1 ){
+    fprintf(stderr, "Unable to write data to socket.\n");
+    return ret;
+  }
+  char *buffer = NULL;
+  ret = readFromSocket(nameserver_fd, buffer, 1);*/
 
 }
 

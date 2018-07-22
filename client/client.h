@@ -19,6 +19,8 @@
 #include "pduReader.h"
 #include "pduCreator.h"
 
+static const int PACKET_SIZE = 1024;
+
 
 typedef struct {
   char *clientName;

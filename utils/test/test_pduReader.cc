@@ -7,17 +7,35 @@
 #include <string>
 #include <iostream>
 
+
 #ifdef __cplusplus
 extern "C"{
 #endif
-#include "pduCommon.h"
-#include "pduCreator.h"
-#include "pduReader.h"
-#include <stdlib.h>
-#include <time.h>
+  #include "pduCommon.h"
+  #include "pduCreator.h"
+  #include "pduReader.h"
+  #include <stdlib.h>
+  #include <time.h>
+  #include <stdarg.h>
+  #include <stddef.h>
+  #include <setjmp.h>
+  #include <cmocka.h>
+  #include "dod_socket.h"
 #ifdef __cplusplus
 }
 #endif
+
+// Necessary evil...
+uint8_t *globalBuffer;
+
+int writeToSocket(int socket_fd, uint8_t *packet, int size);
+
+int readFromSocket(int socket_fd, uint8_t *buffer, int size){
+  std::cout << " MICKE HÄR ... " << std::endl;
+  buffer = globalBuffer;
+  return 0;
+}
+
 class PduReaderTest : public testing::Test
 {
   void SetUp(){
@@ -54,8 +72,6 @@ TEST(PduReaderTest, read_reqPacket){
 
 TEST(PduReaderTest, read_ackPacket){
   pduAck r;
-  char *serName = (char *)"testHost";
-  uint8_t serLen = strlen(serName);
 
   r.opCode = ACK;
   r.id = 454;
@@ -79,6 +95,7 @@ TEST(PduReaderTest, read_ackPacket){
 
 TEST(PduReaderTest, read_sListPacket){
   pduSList r;
+  int socket_fd = 7;
 
   uint16_t noOfServers = 2;
   uint16_t u16;
@@ -155,7 +172,7 @@ TEST(PduReaderTest, read_sListPacket){
   offset += r.sInfo[1].serverNameLen;
 
   pduSList *ret = NULL;
-  ret = pduReader_SList(buffer);
+  ret = pduReader_SList(socket_fd);
 
   ASSERT_TRUE(ret);
 

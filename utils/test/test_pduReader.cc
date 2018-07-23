@@ -26,20 +26,22 @@ extern "C"{
 #endif
 
 // Necessary evil...
+int globalOffset = 0;
 uint8_t *globalBuffer;
 
 int writeToSocket(int socket_fd, uint8_t *packet, int size);
 
 int readFromSocket(int socket_fd, uint8_t *buffer, int size){
-  std::cout << " MICKE HÄR ... " << std::endl;
-  buffer = globalBuffer;
-  return 0;
+  memcpy(buffer, globalBuffer + globalOffset, size);
+  globalOffset += size;
+  return size;
 }
 
 class PduReaderTest : public testing::Test
 {
   void SetUp(){
     setlocale(LC_CTYPE, "");
+    globalOffset = 0;
   }
 
   void TearDown(){}
@@ -172,6 +174,7 @@ TEST(PduReaderTest, read_sListPacket){
   offset += r.sInfo[1].serverNameLen;
 
   pduSList *ret = NULL;
+  globalBuffer = buffer + 1;
   ret = pduReader_SList(socket_fd);
 
   ASSERT_TRUE(ret);

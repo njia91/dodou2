@@ -74,16 +74,16 @@ pduSList *pduReader_SList(int socket_fd){
 
     p->sInfo[i].serverName = (uint8_t *) calloc(sizeof(uint8_t), p->sInfo[i].serverNameLen + 1);
 
-    for (int i = 0; i < calculateNoOfWords(p->sInfo[i].serverNameLen); i ++){
+    offset = 0;
+    for (int j = 0; j < calculateNoOfWords(p->sInfo[i].serverNameLen); j++){
       readFromSocket(socket_fd, buffer, WORD_SIZE);
       // The null-terminator indicates end of of message.
-      for (int j = 0; buffer[j] != '\0' && j < 4; j++){
-        memcpy(p->sInfo[i].serverName + offset, buffer, BYTE_SIZE);
+      for (int k = 0; buffer[k] != '\0' && k < 4; k++){
+        p->sInfo[i].serverName[offset] = buffer[k];
         offset++;
       }
     }
     p->sInfo[i].serverName[p->sInfo[i].serverNameLen] = '\0';
-
   }
 
   return p;

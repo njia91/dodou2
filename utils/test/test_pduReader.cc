@@ -138,8 +138,7 @@ TEST(PduReaderTest, read_sListPacket){
   r.sInfo = s;
   r.noOfServers = noOfServers;
   u16 = htons(noOfServers);
-
-  int noOfWords = 1 + (2 * u16) + calculateNoOfWords(serLen1) + calculateNoOfWords(serLen2);
+  int noOfWords = 1 + (2 * noOfServers) + calculateNoOfWords(serLen1) + calculateNoOfWords(serLen2);
   int offset = 0;
   uint8_t *buffer = (uint8_t *)calloc(sizeof(uint8_t), noOfWords * WORD_SIZE);
 
@@ -199,11 +198,7 @@ TEST(PduReaderTest, read_sListPacket){
     EXPECT_EQ(ret->sInfo[1].ipAdress[i], s[1].ipAdress[i]);
   }
 
-  for (int i = 0; i < noOfServers; i++){
-    free(ret->sInfo[i].serverName);
-  }
-  free(ret->sInfo);
-  free(ret);
+  deletePdu(ret);
   free(s);
   free(buffer);
 }

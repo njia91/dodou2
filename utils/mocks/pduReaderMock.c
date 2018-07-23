@@ -1,14 +1,17 @@
 //
-// Created by njia on 2018-05-20.
+// Created by njia on 2018-07-23.
+// Mock object for pduReader.h
 //
 
-#ifndef DODOU2_PDUREADER_H
-#define DODOU2_PDUREADER_H
+#include <stdarg.h>
+#include <stddef.h>
+#include <setjmp.h>
+#include <cmocka.h>
+#include "pduReader.h"
 
-#include "pduCommon.h"
-#include "dod_socket.h"
-
-void *getDataFromSocket(int socket_fd, uint8_t opCode);
+void *getDataFromSocket(int socket_fd, uint8_t opCode){
+  return (void *)mock();
+}
 
 //Server-nameserver interaction
 pduReq *pduReader_req(uint8_t *buffer);
@@ -18,7 +21,9 @@ pduAlive *pduReader_alive(uint8_t *buffer);
 //Client-nameserver interaction
 pduAck *pduReader_ack(uint8_t *buffer);
 
-pduSList *pduReader_SList(int socket_fd);
+pduSList *pduReader_SList(int socket_fd){
+  return (pduSList *)mock();
+}
 
 //Client-server interaction
 pduJoin *pduReader_join(uint8_t *buffer);
@@ -32,8 +37,3 @@ pduParticipants *pduReader_participants(uint8_t *buffer);
 pduQuit *pduReader_quit(uint8_t *buffer);
 
 pduMess *pduReader_mess(uint8_t *buffer);
-
-void deletePdu(void *pdu);
-
-
-#endif //DODOU2_PDUREADER_H

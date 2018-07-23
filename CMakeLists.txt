@@ -44,9 +44,9 @@ add_executable(clientTest
         client/test/client_test.c
         client/client.c
         utils/pduCommon.c
-        utils/pduReader.c
         utils/pduCreator.c
-        utils/mocks/dod_socketMock.c)
+        utils/mocks/dod_socketMock.c
+        utils/mocks/pduReaderMock.c)
 
 add_executable(testPduReader
         utils/pduCommon.c

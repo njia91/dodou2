@@ -14,6 +14,16 @@
 #include "pduCommon.h"
 
 
+void *getDataFromSocket(int socket_fd, uint8_t opCode){
+  void *pdu;
+
+  if(opCode == SLIST){
+    pdu = pduReader_SList(socket_fd);
+  }
+
+  return pdu;
+}
+
 //Server-nameserver interaction
 pduReq *pduReader_req(uint8_t *buffer){
   pduReq *p = calloc(sizeof(pduReq), 1);
@@ -181,4 +191,17 @@ pduMess *pduReader_mess(uint8_t *buffer){
   p->id[p->idSize] = '\0';
 
   return p;
+}
+
+
+void deletePdu(void *pdu){
+  uint8_t opCode = *(uint8_t*) pdu;
+  if(opCode == SLIST){
+    pduSList *p = (pduSList *) pdu;
+    for (int i = 0; i < p->noOfServers; i++){
+      free(p->sInfo[i].serverName);
+    }
+    free(p->sInfo);
+    free(p);
+  }
 }

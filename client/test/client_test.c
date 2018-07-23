@@ -14,16 +14,56 @@
 
 //extern int createSocket(struct addrinfo **res);
 
+pduSList *createSListPdu(){
+  pduSList *p;
+  p = (pduSList *) calloc(1, sizeof(pduSList));
+  p->opCode = SLIST;
+  p->noOfServers = 2;
+  p->sInfo = calloc(sizeof(serverInfo), p->noOfServers);
+
+  uint8_t ip[2][4] = {{123,0,1,21},
+                      {32,0,2,12}};
+  const char * serverNames[] = {"Michaels Server",
+                                "Anderssons Server"};
+
+  uint16_t port= 123;
+  uint8_t noOfClients = 6;
+  uint8_t len = 0;
+
+  for (int i = 0; i < p->noOfServers; i++){
+    memcpy(&p->sInfo[i].ipAdress, ip[i], sizeof(uint32_t));
+    len = strlen(serverNames[i]);
+    p->sInfo[i].port = port + i;
+    p->sInfo[i].noOfClients = noOfClients + i;
+    p->sInfo[i].serverNameLen = len;
+    p->sInfo[i].serverName = (uint8_t *) calloc(sizeof(uint8_t), p->sInfo[i].serverNameLen + 1);
+    memcpy(p->sInfo[i].serverName, serverNames[i], p->sInfo[i].serverNameLen);
+    p->sInfo[i].serverName[p->sInfo[i].serverNameLen] = '\0';
+  }
+
+  return p;
+}
+
 
 
 void clientTest_connectToNameServer(void **state)
 {
-// Return a single customer ID when mock_query_database() is called.
+  pduSList *pSList;
+  uint8_t opCode = SLIST;
+
   int fd = 545;
   will_return(createSocket, fd);
   will_return(connectToServer, 0);
   expect_value(connectToServer, socket_fd, fd);
 
+  will_return(writeToSocket, 0);
+  will_return(readFromSocket, opCode);
+  will_return(readFromSocket, 1);
+
+  pSList = createSListPdu();
+
+  will_return(getAddrInformation, 0);
+  will_return(getDataFromSocket, (void *) pSList);
 
   char *argv[5] = {"client", "ns", "123.0.0.1", "1234"};
   client_main(4, argv);

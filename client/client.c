@@ -24,7 +24,7 @@ void parseArgs(int argc, char **argv, clientData *args) {
   }
   args->clientName = argv[1];
   args->contactNS = strcmp("ns", argv[2]) ? true : false;
-  args->ipAdress = argv[3];
+  memcpy(args->ipAdress, argv[3], sizeof(uint32_t));
   args->port = argv[4];
 
 
@@ -41,7 +41,7 @@ int establishConnectionWithNs(clientData *cData){
   hints.ai_protocol=0;
   hints.ai_flags=AI_ADDRCONFIG;
 
-  int ret = getaddrinfo(cData->ipAdress, cData->port , &hints, &res);
+  int ret = getAddrInformation((char *)cData->ipAdress, cData->port , &hints, &res);
 
   if (ret != 0) {
     fprintf(stderr, gai_strerror(ret));
@@ -55,39 +55,82 @@ int establishConnectionWithNs(clientData *cData){
     exit(EXIT_FAILURE);
   }
 
-  printf("Value from createSocket %d \n", nameserver_fd);
-
   ret = connectToServer(nameserver_fd, &res);
-
-  printf("Value from connectTOServer %d \n", ret);
 
   return nameserver_fd;
 
 }
 
-int getServerList(int nameserver_fd){
-/*  pduGetList getList;
+pduSList *getServerList(int nameServer_fd){
+  pduGetList getList;
   getList.opCode = GETLIST;
 
-  int ret = writeToSocket(nameserver_fd, (char *) &getList.opCode, 1);
+  int ret = writeToSocket(nameServer_fd, &getList.opCode, 1);
 
   if (ret == -1 ){
     fprintf(stderr, "Unable to write data to socket.\n");
-    return ret;
+    return NULL;
   }
-  char *buffer = NULL;
-  ret = readFromSocket(nameserver_fd, buffer, 1);*/
+  uint8_t opCode = 0;
+  ret = readFromSocket(nameServer_fd, &opCode, 1);
 
+  if (opCode != SLIST){
+    fprintf(stderr, "Invalid packet received from Name Server.\n"
+                    "Expected: %d\n"
+                    "Actual: %d\n", SLIST, opCode);
+
+    exit(EXIT_FAILURE);
+  }
+  return (pduSList *)getDataFromSocket(nameServer_fd, opCode);
+}
+
+void getServerChoiceFromUser(pduSList *pSList, clientData *cData){
+  int UserInput = 0;
+  do{
+    fprintf(stdout, "Based on server id, select a chat server you wish to connect to: \n");
+    for (int i = 0; i < pSList->noOfServers; i++){
+      fprintf(stdout, "-----------------------------------------------------------------\n");
+      fprintf(stdout, "Server ID \t: %d\n", i + 1);
+      fprintf(stdout, "Server name \t: %s\n", pSList->sInfo[i].serverName);
+      fprintf(stdout, "Number of active users \t: %d\n", pSList->sInfo[i].noOfClients);
+      fprintf(stdout, "IP adress of server \t: ");
+      for(int j = 0; j < 4; j++){
+        fprintf(stdout, "%d ", pSList->sInfo[i].ipAdress[j]);
+
+      }
+      fprintf(stdout, "\n");
+
+    }
+    UserInput = getchar();
+    if(UserInput > pSList->noOfServers){
+      fprintf(stdout, "Invalid choice. Please select a server in the list.\n");
+      UserInput = -1;
+    }
+  }while(UserInput != -1);
+  fprintf(stdout, "-----------------------------------------------------------------\n");
+
+  memcpy(cData->ipAdress, pSList->sInfo[UserInput].ipAdress, sizeof(uint32_t));
+  sprintf(cData->port, "%d", pSList->sInfo[UserInput].port);
 }
 
 int client_main(int argc, char **argv){
   clientData cData;
-
   parseArgs(argc, argv, &cData);
 
   if (cData.contactNS){
     int nameServer_fd = establishConnectionWithNs(&cData);
-    getServerList(nameServer_fd);
+    pduSList *pSList = getServerList(nameServer_fd);
+    if (pSList == NULL){
+      fprintf(stderr, "Something went wrong when reading data from Socket. "
+                      "Terminating Program\n");
+      exit(EXIT_FAILURE);
+    }
+    getServerChoiceFromUser(pSList, &cData);
+
+
+
+
+
   }
 
   return 0;

@@ -17,6 +17,11 @@
 
 // Use as reference: https://www.ibm.com/support/knowledgecenter/en/ssw_i5_54/rzab6/xnonblock.htm
 
+//Defines own version for testing purposes
+int getAddrInformation(const char *__restrict __name,
+                        const char *__restrict __service,
+                        const struct addrinfo *__restrict __req,
+                        struct addrinfo **__restrict __pai);
 
 //  status = pthread_kill( threadid, SIGUSR1);  <<<---- Signal other threads to STOP
 

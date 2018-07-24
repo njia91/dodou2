@@ -25,8 +25,8 @@ static const int PACKET_SIZE = 1024;
 typedef struct {
   char *clientName;
   bool contactNS;
-  uint8_t *ipAdress[4];
-  char *port;
+  uint8_t ipAdress[4];
+  uint16_t port;
 } clientData;
 
 void parseArgs(int argc, char **argv, clientData *args);
@@ -35,7 +35,7 @@ int establishConnectionWithNs(clientData *cData);
 
 pduSList *getServerList(int nameServer_fd);
 
-void getServerChoiceFromUser(pduSList *pSList, clientData *cData);
+int getServerChoiceFromUser(pduSList *pSList, clientData *cData);
 
 int client_main(int argc, char **argv);
 

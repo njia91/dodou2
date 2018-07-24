@@ -23,9 +23,9 @@ void parseArgs(int argc, char **argv, clientData *args) {
     exit(EXIT_FAILURE);
   }
   args->clientName = argv[1];
-  args->contactNS = strcmp("ns", argv[2]) ? true : false;
+  args->contactNS = strcmp("ns", argv[2]) ? false : true;
   memcpy(args->ipAdress, argv[3], sizeof(uint32_t));
-  args->port = argv[4];
+  args->port =  atoi(argv[4]);
 
 
 }
@@ -41,7 +41,9 @@ int establishConnectionWithNs(clientData *cData){
   hints.ai_protocol=0;
   hints.ai_flags=AI_ADDRCONFIG;
 
-  int ret = getAddrInformation((char *)cData->ipAdress, cData->port , &hints, &res);
+  char port[5];
+  sprintf(port, "%d", cData->port );
+  int ret = getAddrInformation((char *)cData->ipAdress, port , &hints, &res);
 
   if (ret != 0) {
     fprintf(stderr, gai_strerror(ret));
@@ -84,10 +86,15 @@ pduSList *getServerList(int nameServer_fd){
   return (pduSList *)getDataFromSocket(nameServer_fd, opCode);
 }
 
-void getServerChoiceFromUser(pduSList *pSList, clientData *cData){
-  int UserInput = 0;
+int getServerChoiceFromUser(pduSList *pSList, clientData *cData){
+  int userInput = 0;
+  const int bufferSize = 24;
+  char buffer[bufferSize];
+  memset(buffer, 0, bufferSize);
   do{
-    fprintf(stdout, "Based on server id, select a chat server you wish to connect to: \n");
+    userInput = -1;
+    fprintf(stdout, "-----------------------------------------------------------------\n");
+    fprintf(stdout, "List of available servers.: \n");
     for (int i = 0; i < pSList->noOfServers; i++){
       fprintf(stdout, "-----------------------------------------------------------------\n");
       fprintf(stdout, "Server ID \t: %d\n", i + 1);
@@ -101,20 +108,29 @@ void getServerChoiceFromUser(pduSList *pSList, clientData *cData){
       fprintf(stdout, "\n");
 
     }
-    UserInput = getchar();
-    if(UserInput > pSList->noOfServers){
-      fprintf(stdout, "Invalid choice. Please select a server in the list.\n");
-      UserInput = -1;
+    // TODO CLear STDIN before input?
+    fprintf(stdout, "-----------------------------------------------------------------\n");
+    fprintf(stdout, "Select a server between 1 and %d. Zero to exit:  ", pSList->noOfServers);
+    fgets(buffer, bufferSize, stdin);
+    if (buffer[0] - '0' <= pSList->noOfServers + 1 && buffer[0] -'0' >= 0){
+      userInput = buffer[0] - '0';
+      if (userInput){
+        memcpy(cData->ipAdress, pSList->sInfo[userInput - 1].ipAdress, sizeof(uint32_t));
+        cData->port = pSList->sInfo[userInput - 1].port;
+      }
+    } else {
+        fprintf(stdout, "Invalid choice. Please select a server in the list.\n");
     }
-  }while(UserInput != -1);
-  fprintf(stdout, "-----------------------------------------------------------------\n");
+  }while(userInput == -1);
+  fprintf(stdout, "-----------------------------------------------------------------\n\n");
 
-  memcpy(cData->ipAdress, pSList->sInfo[UserInput].ipAdress, sizeof(uint32_t));
-  sprintf(cData->port, "%d", pSList->sInfo[UserInput].port);
+
+  return userInput;
 }
 
 int client_main(int argc, char **argv){
   clientData cData;
+
   parseArgs(argc, argv, &cData);
 
   if (cData.contactNS){
@@ -125,13 +141,14 @@ int client_main(int argc, char **argv){
                       "Terminating Program\n");
       exit(EXIT_FAILURE);
     }
-    getServerChoiceFromUser(pSList, &cData);
+    int ret = getServerChoiceFromUser(pSList, &cData);
 
-
-
-
-
+    if (ret == 0){
+      fprintf(stdout, "User chose to terminate the session \n");
+      exit(EXIT_SUCCESS);
+    }
   }
+
 
   return 0;
 

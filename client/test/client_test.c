@@ -65,8 +65,8 @@ void clientTest_connectToNameServer(void **state)
   will_return(getAddrInformation, 0);
   will_return(getDataFromSocket, (void *) pSList);
 
-  char *argv[5] = {"client", "ns", "123.0.0.1", "1234"};
-  client_main(4, argv);
+  char *argv[5] = {"client", "Micke :)", "ns", "123.0.0.1", "1234"};
+  client_main(5, argv);
 }
 
 

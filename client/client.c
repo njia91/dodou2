@@ -88,9 +88,6 @@ pduSList *getServerList(int nameServer_fd){
 
 int getServerChoiceFromUser(pduSList *pSList, clientData *cData){
   int userInput = 0;
-  const int bufferSize = 24;
-  char buffer[bufferSize];
-  memset(buffer, 0, bufferSize);
   do{
     userInput = -1;
     fprintf(stdout, "-----------------------------------------------------------------\n");
@@ -111,7 +108,13 @@ int getServerChoiceFromUser(pduSList *pSList, clientData *cData){
     // TODO CLear STDIN before input?
     fprintf(stdout, "-----------------------------------------------------------------\n");
     fprintf(stdout, "Select a server between 1 and %d. Zero to exit:  ", pSList->noOfServers);
-    fgets(buffer, bufferSize, stdin);
+    char *buffer = NULL;
+    size_t size = 0;
+    if(getline(&buffer, &size, stdin) == -1){
+      fprintf(stderr, "%s\n", strerror(errno));
+      return -1;
+    }
+    printf("MICKE Buffer %s \n", buffer);
     if (buffer[0] - '0' <= pSList->noOfServers + 1 && buffer[0] -'0' >= 0){
       userInput = buffer[0] - '0';
       if (userInput){
@@ -148,6 +151,11 @@ int client_main(int argc, char **argv){
       exit(EXIT_SUCCESS);
     }
   }
+
+  // Connect to Server
+
+  printf("CLient name : %s, IP: %d.%d.%d.%d, Port %d \n", cData.clientName, cData.ipAdress[0],
+         cData.ipAdress[1], cData.ipAdress[2], cData.ipAdress[3], cData.port);
 
 
   return 0;

@@ -4,7 +4,8 @@
 
 #ifndef DODOU2_CLIENT_H
 #define DODOU2_CLIENT_H
-
+// Needed for getline()
+#define _GNU_SOURCE
 
 
 #include <arpa/inet.h>
@@ -19,7 +20,7 @@
 #include "pduReader.h"
 #include "pduCreator.h"
 
-static const int PACKET_SIZE = 1024;
+static const size_t MAX_SIZE = 1024;
 
 
 typedef struct {

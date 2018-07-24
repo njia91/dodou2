@@ -11,8 +11,21 @@
 #include "dod_socket.h"
 #include "client.h"
 
+/*
 
-//extern int createSocket(struct addrinfo **res);
+ FILE *fp;
+
+
+   fp = freopen("file.txt", "r+", stdout);
+
+   printf("This text is redirected to file.txt\n");
+
+   fclose(fp);
+
+ freopen("filename", "r", stdin);
+
+*/
+
 
 pduSList *createSListPdu(){
   pduSList *p;
@@ -50,6 +63,11 @@ void clientTest_connectToNameServer(void **state)
 {
   pduSList *pSList;
   uint8_t opCode = SLIST;
+  FILE *fp;
+
+  fp = freopen("../testSupport/connectToNs.txt", "r", stdin);
+
+
 
   int fd = 545;
   will_return(createSocket, fd);
@@ -67,6 +85,8 @@ void clientTest_connectToNameServer(void **state)
 
   char *argv[5] = {"client", "Micke :)", "ns", "123.0.0.1", "1234"};
   client_main(5, argv);
+
+  fclose(fp);
 }
 
 

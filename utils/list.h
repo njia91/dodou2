@@ -52,7 +52,7 @@ dll *dll_empty(void);
 
 /*
   Sets a memoryhandler for the dll and it will have responsibility
-  to deallocate memory for elements that no longer presists in the dll.
+  to deallocate memory for elements that no longer exists in the dll.
 
   Parameters: l - a directed list
               f - functions pointer a function that deallocates memory.

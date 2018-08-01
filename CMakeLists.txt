@@ -38,7 +38,9 @@ add_executable(client
         utils/dod_socket.h
         utils/pduCommon.c
         utils/pduReader.c
-        utils/pduCreator.c)
+        utils/pduCreator.c
+        utils/socketReaderAPI.c
+        utils/socketReaderAPI.h)
 
 add_executable(clientTest
         client/test/client_test.c

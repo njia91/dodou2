@@ -61,3 +61,4 @@ int tcp_acceptConnections(int socket_fd, void (*fPtr)()){
 int writeToSocket(int socket_fd, uint8_t *packet, int size);
 
 int readFromSocket(int socket_fd, uint8_t *buffer, int size);
+

@@ -24,10 +24,12 @@
 // Client needs a separate thread for reading and writing to socket.
 
 
-int getAddrInformation(const char *__restrict __name,
-                       const char *__restrict __service,
-                       const struct addrinfo *__restrict __req,
-                       struct addrinfo **__restrict __pai);
+int getAddrInformation(const char * name,
+                       const char *service,
+                       const struct addrinfo * req,
+                       struct addrinfo ** pai);
+
+void freeAddrInformation(struct addrinfo **addr);
 
 int createSocket(struct addrinfo **res);
 

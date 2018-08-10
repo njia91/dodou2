@@ -57,31 +57,61 @@ pduSList *createSListPdu(){
   return p;
 }
 
+pduParticipants *createParticipantsPdu(){
+  pduParticipants *p;
+  p = (pduParticipants *) calloc(1, sizeof(pduParticipants));
+  p->opCode = JOIN;
+  p->noOfIds = 3;
+  p->ids = calloc(sizeof(serverInfo), p->noOfIds);
 
+  const char * clientNames[] = {"Michaels Server",
+                                "Anderssons Server",
+                                "Janne"};
+
+  uint8_t len = 0;
+  for (int i = 0; i < p->noOfIds; i++){
+    len = strlen(clientNames[i]) + 1;
+    p->ids[i] = calloc(sizeof(uint8_t), len);
+    memcpy(p->ids[i], clientNames[i], len);
+  }
+
+  return p;
+}
 
 void clientTest_connectToNameServer(void **state)
 {
   pduSList *pSList;
-  uint8_t opCode = SLIST;
+  pduParticipants *pParticipants;
+  struct addrinfo retAddr;
   FILE *fp;
 
   fp = freopen("../testSupport/connectToNs.txt", "r", stdin);
 
-
-
   int fd = 545;
-  will_return(createSocket, fd);
-  will_return(connectToServer, 0);
+  will_return_always(createSocket, fd);
+  will_return_always(connectToServer, 0);
+  expect_value(connectToServer, socket_fd, fd);
   expect_value(connectToServer, socket_fd, fd);
 
-  will_return(writeToSocket, 0);
-  will_return(readFromSocket, opCode);
+
+  will_return_always(writeToSocket, 1);
+  will_return(readFromSocket, SLIST);
+  will_return(readFromSocket, 1);
+  will_return(readFromSocket, PARTICIPANTS);
   will_return(readFromSocket, 1);
 
-  pSList = createSListPdu();
 
+  pSList = createSListPdu();
+  pParticipants = createParticipantsPdu();
+
+  will_return(getAddrInformation, &retAddr);
   will_return(getAddrInformation, 0);
+  will_return(getAddrInformation, &retAddr);
+  will_return(getAddrInformation, 0);
+
+
   will_return(getDataFromSocket, (void *) pSList);
+  will_return(getDataFromSocket, (void *) pParticipants);
 
   char *argv[5] = {"client", "Micke :)", "ns", "123.0.0.1", "1234"};
   client_main(5, argv);

@@ -3,8 +3,21 @@
 //
 
 
+
+
 #include "dod_socket.h"
 
+
+int getAddrInformation(const char * name,
+                       const char *service,
+                       const struct addrinfo * req,
+                       struct addrinfo ** pai){
+  getaddrinfo(name, service, req, pai);
+}
+
+void freeAddrInformation(struct addrinfo **addr){
+  freeaddrinfo(addr);
+}
 
 int createSocket(struct addrinfo **res){
   int fd = 0;

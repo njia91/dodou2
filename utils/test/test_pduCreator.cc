@@ -96,12 +96,13 @@ TEST(PduCreatorTest, creatingAlivePdu){
 TEST(PduCreatorTest, creatingJoinPdu){
   pduJoin j;
   char *id = (char *)"MICKEÅÄÖ";
+  int bufferSize;
 
   j.opCode = JOIN;
   j.idSize = strlen(id);
   j.id = (uint8_t *)id;
 
-  uint8_t *retVal = pduCreator_join(&j);
+  uint8_t *retVal = pduCreator_join(&j, &bufferSize);
 
   uint8_t retOpCode;
   uint8_t retIdSize;
@@ -122,13 +123,14 @@ TEST(PduCreatorTest, creatingJoinPdu){
 TEST(PduCreatorTest, creatingPJoinPdu){
   pduPJoin pj;
   char *id = (char *)"MICKEÅÄÖ";
+  int bufferSize;
 
   pj.opCode = PJOIN;
   pj.idSize = strlen(id);
   pj.timeStamp = (uint32_t)time(NULL);
   pj.id = (uint8_t *)id;
 
-  uint8_t *retVal = pduCreator_pJoin(&pj);
+  uint8_t *retVal = pduCreator_pJoin(&pj, &bufferSize);
 
   uint8_t retOpCode;
   uint8_t retIdSize;
@@ -212,13 +214,13 @@ TEST(PduCreatorTest, creatingParticipantsPdu){
 TEST(PduCreatorTest, creatingPLeavePdu){
   pduPJoin p;
   char *id = (char *)"MICKEÅÄÖ";
-
+  int bufferSize;
   p.opCode = PLEAVE;
   p.idSize = strlen(id);
   p.timeStamp = (uint32_t)time(NULL);
   p.id = (uint8_t *)id;
 
-  uint8_t *retVal = pduCreator_pLeave(&p);
+  uint8_t *retVal = pduCreator_pLeave(&p, &bufferSize);
 
   uint8_t retOpCode;
   uint8_t retIdSize;

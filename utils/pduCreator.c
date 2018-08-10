@@ -51,7 +51,7 @@ uint8_t *pduCreator_getList(){
 
 
 //Client-server interaction
-uint8_t *pduCreator_join(pduJoin *join){
+uint8_t *pduCreator_join(pduJoin *join, int *bufferSize){
 
   if(join->opCode != JOIN){
     fprintf(stderr, "Invalid Operation Code.\n");
@@ -69,7 +69,7 @@ uint8_t *pduCreator_join(pduJoin *join){
   return pduBuffer;
 }
 
-uint8_t *pduCreator_pJoin(pduPJoin *pJoin){
+uint8_t *pduCreator_pJoin(pduPJoin *pJoin, int *bufferSize){
 
   if(!(pJoin->opCode == PJOIN || pJoin->opCode == PLEAVE)){
     fprintf(stderr, "Invalid Operation Code.\n");
@@ -77,6 +77,7 @@ uint8_t *pduCreator_pJoin(pduPJoin *pJoin){
   }
 
   int packetSize = (2 * WORD_SIZE) + pJoin->idSize;
+  *bufferSize = packetSize;
   int noOfWords = calculateNoOfWords(packetSize);
   uint32_t u32 = htonl(pJoin->timeStamp);
   uint8_t *pduBuffer = calloc(sizeof(uint8_t), noOfWords * WORD_SIZE);
@@ -121,12 +122,11 @@ uint8_t *pduCreator_participants(pduParticipants *par){
     offset += strLen;
   }
 
-
   return pduBuffer;
 }
 
-uint8_t *pduCreator_pLeave(pduPLeave *pLeave){
-  return pduCreator_pJoin(pLeave);
+uint8_t *pduCreator_pLeave(pduPLeave *pLeave, int *bufferSize){
+  return pduCreator_pJoin(pLeave, bufferSize);
 }
 
 uint8_t *pduCreator_quit(){
@@ -142,7 +142,7 @@ uint8_t *pduCreator_mess(pduMess *mess){
     return NULL;
   }
 
-  //Special solution due to the variable length of both message and client id;
+  // Needed due to the variable length of both message and client id;
   int noOfWords = 3;
   int noOfWordsForMess = calculateNoOfWords(mess->messageSize);
   int noOfWordsForId = calculateNoOfWords(mess->idSize);

@@ -15,7 +15,7 @@
 
 
 void *getDataFromSocket(int socket_fd, uint8_t opCode){
-  void *pdu;
+  void *pdu = NULL;
 
   if(opCode == SLIST){
     pdu = pduReader_SList(socket_fd);

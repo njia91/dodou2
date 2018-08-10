@@ -14,7 +14,12 @@ int getAddrInformation(const char *__restrict __name,
                        const char *__restrict __service,
                        const struct addrinfo *__restrict __req,
                        struct addrinfo **__restrict __pai){
+  *__pai = (struct addrinfo *)mock();
   return (int)mock();
+}
+
+void freeAddrInformation(struct addrinfo **addr){
+  return;
 }
 
 int createSocket(struct addrinfo **res){

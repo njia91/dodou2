@@ -7,22 +7,25 @@
 
 
 #include "list.h"
-#include<pthread.h>
+#include <pthread.h>
 #include <sys/epoll.h>
 #include "pduReader.h"
+#include "pduCommon.h"
 
-static const MAX_EVENTS = 32;
+static const int MAX_EVENTS = 32;
+
+typedef void processEvent(int, void *);
 
 typedef struct {
   int epoll_fd;
+  dll *packetList;
   pthread_cond_t incomingPacket;
   pthread_mutex_t packetList_mutex;
-  dll *packetList;
+  processEvent *func;
 } readerInfo;
 
-void *waitForIncomingMessages(void *epollArgs);
 
-void readDataFromSocket(int socketfd);
+void *waitForIncomingMessages(void *threadData);
 
 
 

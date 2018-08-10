@@ -16,6 +16,7 @@
 #include <dod_socket.h>
 #include <netdb.h>
 
+
 #include "pduCommon.h"
 #include "pduReader.h"
 #include "pduCreator.h"
@@ -24,10 +25,10 @@ static const size_t MAX_SIZE = 1024;
 
 
 typedef struct {
-  char *clientName;
+  char *username;
   bool contactNS;
   uint8_t ipAdress[4];
-  uint16_t port;
+  char *port;
 } clientData;
 
 void parseArgs(int argc, char **argv, clientData *args);

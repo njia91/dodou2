@@ -206,12 +206,12 @@ TEST(PduReaderTest, read_sListPacket){
 TEST(PduReaderTest, read_JoinPdu){
   pduJoin r;
   char str[] = "Micke";
-
+  int bufferSize;
   r.opCode = JOIN;
   r.id = (uint8_t *) str;
   r.idSize = strlen((char * ) r.id);
 
-  uint8_t *retVal = pduCreator_join(&r);
+  uint8_t *retVal = pduCreator_join(&r, &bufferSize);
 
   pduJoin *ret = pduReader_join(retVal);
 
@@ -228,12 +228,13 @@ TEST(PduReaderTest, read_JoinPdu){
 TEST(PduReaderTest, read_pJoinPdu){
   pduPJoin r;
   char str[] = "Micke";
+  int bufferSize;
   r.opCode = PJOIN;
   r.id = (uint8_t *) str;
   r.idSize = strlen((char *) r.id);
   r.timeStamp = 34567;
 
-  uint8_t *retVal = pduCreator_pJoin(&r);
+  uint8_t *retVal = pduCreator_pJoin(&r, &bufferSize);
 
   pduPJoin *ret = pduReader_pJoin(retVal);
 
@@ -250,12 +251,13 @@ TEST(PduReaderTest, read_pJoinPdu){
 TEST(PduReaderTest, read_pLeavePdu){
   pduPLeave r;
   char str[] = "Micke";
+  int bufferSize;
   r.opCode = PJOIN;
   r.id = (uint8_t *) str;
   r.idSize = strlen((char *) r.id);
   r.timeStamp = 34567;
 
-  uint8_t *retVal = pduCreator_pLeave(&r);
+  uint8_t *retVal = pduCreator_pLeave(&r, &bufferSize);
 
   pduPLeave *ret = pduReader_pleave(retVal);
 

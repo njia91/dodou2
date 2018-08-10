@@ -19,11 +19,11 @@ uint8_t *pduCreator_alive(pduAlive *alive);
 uint8_t *pduCreator_getList();
 
 //Client-server interaction
-uint8_t *pduCreator_join(pduJoin *join);
+uint8_t *pduCreator_join(pduJoin *join, int *bufferSize);
 
-uint8_t *pduCreator_pJoin(pduPJoin *pjoin);
+uint8_t *pduCreator_pJoin(pduPJoin *pjoin, int *bufferSize);
 
-uint8_t *pduCreator_pLeave(pduPLeave *pLeave);
+uint8_t *pduCreator_pLeave(pduPLeave *pLeave, int *bufferSize);
 
 uint8_t *pduCreator_participants(pduParticipants *par);
 

@@ -5,8 +5,8 @@
 #include "socketReaderAPI.h"
 
 
-void *waitForIncomingMessages(void *args){
-  readerInfo *rInfo = (readerInfo *) args;
+void *waitForIncomingMessages(void *threadData){
+  readerInfo *rInfo = (readerInfo *) threadData;
   struct epoll_event events[MAX_EVENTS];
   struct epoll_event ev;
 
@@ -15,8 +15,14 @@ void *waitForIncomingMessages(void *args){
   while (true) {
     availFds = epoll_wait(rInfo->epoll_fd, events, MAX_EVENTS, -1);
 
+    if (availFds == -1) {
+      perror("epoll_wait");
+      exit(EXIT_FAILURE);
+    }
+
     for (int i = 0; i < availFds; ++i) {
       // read data from available FD;
+      rInfo->func(events[i].data.fd, (void *) rInfo);
 
       ev.data.fd = events[i].data.fd;
       ev.events = EPOLLIN | EPOLLONESHOT | EPOLLEXCLUSIVE;
@@ -24,10 +30,6 @@ void *waitForIncomingMessages(void *args){
     }
     break;
   }
-}
 
-void readDataFromSocket(int socketfd){
-  int opCode = 0;
-  int ret = readFromSocket(socketfd, &opCode, 1);
-  void *pdu = getDataFromSocket()
+  pthread_exit(NULL);
 }

@@ -2,12 +2,9 @@
 // Created by njia on 2018-07-07.
 //
 
-
-
-
 #include "client.h"
+#include "clientSession.h"
 #include <stdio.h>
-
 
 /*
 int main(int argc, char **argv){
@@ -22,11 +19,11 @@ void parseArgs(int argc, char **argv, clientData *args) {
                     "<ProgramName> [localPort] [remote IP Adress] [remote Port]\n");
     exit(EXIT_FAILURE);
   }
-  args->clientName = argv[1];
+  args->username = argv[1];
   args->contactNS = strcmp("ns", argv[2]) ? false : true;
   memcpy(args->ipAdress, argv[3], sizeof(uint32_t));
-  args->port =  atoi(argv[4]);
-
+  args->port = calloc(sizeof(uint8_t), PORT_LENGTH);
+  memcpy(args->port, argv[4], PORT_LENGTH - 1);
 
 }
 
@@ -41,9 +38,7 @@ int establishConnectionWithNs(clientData *cData){
   hints.ai_protocol=0;
   hints.ai_flags=AI_ADDRCONFIG;
 
-  char port[5];
-  sprintf(port, "%d", cData->port );
-  int ret = getAddrInformation((char *)cData->ipAdress, port , &hints, &res);
+  int ret = getAddrInformation((char *)cData->ipAdress, cData->port , &hints, &res);
 
   if (ret != 0) {
     fprintf(stderr, gai_strerror(ret));
@@ -59,6 +54,7 @@ int establishConnectionWithNs(clientData *cData){
 
   ret = connectToServer(nameserver_fd, &res);
 
+  freeAddrInformation(res);
   return nameserver_fd;
 
 }
@@ -114,18 +110,18 @@ int getServerChoiceFromUser(pduSList *pSList, clientData *cData){
       fprintf(stderr, "%s\n", strerror(errno));
       return -1;
     }
-    printf("MICKE Buffer %s \n", buffer);
     if (buffer[0] - '0' <= pSList->noOfServers + 1 && buffer[0] -'0' >= 0){
       userInput = buffer[0] - '0';
       if (userInput){
         memcpy(cData->ipAdress, pSList->sInfo[userInput - 1].ipAdress, sizeof(uint32_t));
-        cData->port = pSList->sInfo[userInput - 1].port;
+        cData->port = calloc(sizeof(uint8_t), PORT_LENGTH);
+        sprintf(cData->port, "%d", pSList->sInfo[userInput - 1].port);
       }
     } else {
         fprintf(stdout, "Invalid choice. Please select a server in the list.\n");
     }
   }while(userInput == -1);
-  fprintf(stdout, "-----------------------------------------------------------------\n\n");
+  fprintf(stdout, "\n-----------------------------------------------------------------\n\n");
 
 
   return userInput;
@@ -152,11 +148,13 @@ int client_main(int argc, char **argv){
     }
   }
 
-  // Connect to Server
 
-  printf("CLient name : %s, IP: %d.%d.%d.%d, Port %d \n", cData.clientName, cData.ipAdress[0],
+  printf("CLient name : %s, IP: %d.%d.%d.%d, Port %s \n\n", cData.username, cData.ipAdress[0],
          cData.ipAdress[1], cData.ipAdress[2], cData.ipAdress[3], cData.port);
 
+  // Start Session
+
+  startChatSession(&cData);
 
   return 0;
 

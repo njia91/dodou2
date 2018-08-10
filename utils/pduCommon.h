@@ -4,7 +4,8 @@
 #include <stdint.h>
 
 static const uint8_t BYTE_SIZE     = 1;
-static const uint8_t WORD_SIZE     = 4;     
+static const uint8_t WORD_SIZE     = 4;
+static const int PORT_LENGTH = 6;
 
 //Operational Codes 
 static const uint8_t REQ           = 0;
@@ -94,6 +95,7 @@ typedef struct {
 
 typedef pduPJoin pduPLeave;
 typedef pduQuit pduGetList;
+typedef void *genericPdu;
 
 
 uint8_t calculateCheckSum(void *p, int size);

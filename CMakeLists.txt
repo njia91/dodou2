@@ -34,6 +34,7 @@ add_executable(testPduCreator
 
 add_executable(client
         client/client.c
+        client/clientSession.c
         utils/dod_socket.c
         utils/dod_socket.h
         utils/pduCommon.c
@@ -44,11 +45,13 @@ add_executable(client
 
 add_executable(clientTest
         client/test/client_test.c
+        client/clientSession.c
         client/client.c
         utils/pduCommon.c
         utils/pduCreator.c
         utils/mocks/dod_socketMock.c
-        utils/mocks/pduReaderMock.c)
+        utils/mocks/pduReaderMock.c
+        utils/socketReaderAPI.c)
 
 add_executable(testPduReader
         utils/pduCommon.c

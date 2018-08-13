@@ -5,6 +5,9 @@
 #ifndef DODOU2_CLIENTSESSION_H
 #define DODOU2_CLIENTSESSION_H
 
+#define _POSIX_C_SOURCE >= 200809L
+
+#include <stdio.h>
 #include "client.h"
 #include <unistd.h>
 #include <pthread.h>
@@ -13,16 +16,17 @@
 
 genericPdu getPduFromSocket(int socket_fd);
 
-void proccessSocketData(int socket_fd, void *threadArgs);
-
+void processSocketData(int socket_fd, void *threadArgs);
 
 void startChatSession(clientData *cData);
 
-int setupConnectionToServer(const char *ip, const char *port);
+int setupConnectionToServer(const uint8_t *ip, const char *port);
 
 int joinChatSession(int server_fd, clientData *cData);
 
 int printServerParticipants(int server_fd, clientData *cData);
+
+void readInputFromUser();
 
 
 #endif //DODOU2_CLIENTSESSION_H

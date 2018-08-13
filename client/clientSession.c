@@ -4,6 +4,7 @@
 
 #include <pduReader.h>
 
+
 #include "clientSession.h"
 #include "dod_socket.h"
 #include "pduCommon.h"
@@ -29,7 +30,7 @@ genericPdu getPduFromSocket(int socket_fd){
 
 }
 
-void proccessSocketData(int socket_fd, void *threadArgs){
+void processSocketData(int socket_fd, void *threadArgs){
   genericPdu p = getPduFromSocket(socket_fd);
 
   p++;
@@ -120,6 +121,19 @@ int printServerParticipants(int server_fd, clientData *cData){
   return 0;
 }
 
+void readInputFromUser(){
+  int buffSize = 1056;
+  char buffer[1056];
+  bool active = true;
+  while (active){
+
+    if (getline(&buffer, &buffSize, stdin) == -1){
+      fprintf(stderr, "Failed to read data from user: %s\n", strerror(errno));
+      break;
+    }
+  }
+}
+
 
 void startChatSession(clientData *cData){
   // Connect to server
@@ -139,10 +153,10 @@ void startChatSession(clientData *cData){
 
   ret = printServerParticipants(server_fd, cData);
 
-  epoll_fd = epoll_create(0);
+  epoll_fd = epoll_create1(0);
 
   if (epoll_fd == -1){
-    fprintf(stderr,"Failed to create epoll FD -  %d\n", strerror(errno));
+    fprintf(stderr,"Failed to create epoll FD -  %s\n", strerror(errno));
     exit(EXIT_FAILURE);
   }
 
@@ -152,15 +166,15 @@ void startChatSession(clientData *cData){
   epoll_ctl(epoll_fd, EPOLL_CTL_ADD,server_fd, &ev);
 
   readerInfo rInfo;
-  rInfo.epoll_fd;
-  rInfo.func = proccessSocketData;
+  rInfo.epoll_fd = epoll_fd;
+  rInfo.func = processSocketData;
   rInfo.packetList = NULL;
-  rInfo.packetList_mutex = NULL;
-  rInfo.incomingPacket = NULL;
 
-  // Start chatt session
-  ret = pthread_create(&clientThread, NULL, waitForIncomingMessages, (void *)rInfo);
-
+  // Start chat session
+  ret = pthread_create(&clientThread, NULL, waitForIncomingMessages, (void *)&rInfo);
+  if (ret){
+    fprintf(stderr, "Unable to create a pthread. Error: %d\n", ret);
+  }
   close(epoll_fd);
   close(server_fd);
 }

@@ -6,12 +6,6 @@
 #include "clientSession.h"
 #include <stdio.h>
 
-/*
-int main(int argc, char **argv){
-  printf("Tjoo heeej! \n");
-
-  return 0;
-}*/
 
 void parseArgs(int argc, char **argv, clientData *args) {
   if (argc < 4) {
@@ -54,7 +48,7 @@ int establishConnectionWithNs(clientData *cData){
 
   ret = connectToServer(nameserver_fd, &res);
 
-  freeAddrInformation(res);
+  freeAddrInformation(&res);
   return nameserver_fd;
 
 }

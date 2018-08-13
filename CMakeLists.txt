@@ -34,6 +34,7 @@ add_executable(testPduCreator
 
 add_executable(client
         client/client.c
+        client/client.h
         client/clientSession.c
         utils/dod_socket.c
         utils/dod_socket.h
@@ -65,7 +66,7 @@ add_library(UTILS ${UTILS_SOURCE})
 target_link_libraries(testPduCreator ${PThreadLib} ${CMAKE_SOURCE_DIR}/lib/libgtest.a)
 target_link_libraries(testPduReader ${PThreadLib} ${CMAKE_SOURCE_DIR}/lib/libgtest.a)
 target_link_libraries(client ${PThreadLib} UTILS)
-target_link_libraries(clientTest ${CMOCKA_LIBRARY})
+target_link_libraries(clientTest ${PThreadLib} ${CMOCKA_LIBRARY})
 target_link_libraries(testPduReader ${CMOCKA_LIBRARY})
 
 target_compile_options(clientTest PRIVATE "-D_POSIX_C_SOURCE=200112L")

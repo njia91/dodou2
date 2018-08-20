@@ -6,10 +6,11 @@
 #include <stddef.h>
 #include <setjmp.h>
 #include <cmocka.h>
-#include <stdio.h>
-
-#include "dod_socket.h"
+#include "ThreadingSolution.h"
+#include "sysCall_facade.h"
 #include "client.h"
+#include "pduCommon.h"
+#include "pduReader.h"
 
 /*
 
@@ -25,7 +26,6 @@
  freopen("filename", "r", stdin);
 
 */
-
 
 pduSList *createSListPdu(){
   pduSList *p;
@@ -78,36 +78,37 @@ pduParticipants *createParticipantsPdu(){
   return p;
 }
 
-void clientTest_connectToNameServer(void **state)
+void clientTest_connectToServer(void **state)
 {
   pduSList *pSList;
   pduParticipants *pParticipants;
   struct addrinfo retAddr;
   FILE *fp;
+  IS_MOCKOBJECT_SET = false;
 
   fp = freopen("../testSupport/connectToNs.txt", "r", stdin);
 
   int fd = 545;
-  will_return_always(createSocket, fd);
-  will_return_always(connectToServer, 0);
-  expect_value(connectToServer, socket_fd, fd);
-  expect_value(connectToServer, socket_fd, fd);
+  will_return_always(facade_createSocket, fd);
+  will_return_always(facade_connectToServer, 0);
+  expect_value(facade_connectToServer, socket_fd, fd);
+  expect_value(facade_connectToServer, socket_fd, fd);
 
 
-  will_return_always(writeToSocket, 1);
-  will_return(readFromSocket, SLIST);
-  will_return(readFromSocket, 1);
-  will_return(readFromSocket, PARTICIPANTS);
-  will_return(readFromSocket, 1);
+  will_return_always(facade_writeToSocket, 1);
+  will_return(facade_readFromSocket, SLIST);
+  will_return(facade_readFromSocket, 1);
+  will_return(facade_readFromSocket, PARTICIPANTS);
+  will_return(facade_readFromSocket, 1);
 
 
   pSList = createSListPdu();
   pParticipants = createParticipantsPdu();
 
-  will_return(getAddrInformation, &retAddr);
-  will_return(getAddrInformation, 0);
-  will_return(getAddrInformation, &retAddr);
-  will_return(getAddrInformation, 0);
+  will_return(facade_getAddrinfo, &retAddr);
+  will_return(facade_getAddrinfo, 0);
+  will_return(facade_getAddrinfo, &retAddr);
+  will_return(facade_getAddrinfo, 0);
 
 
   will_return(getDataFromSocket, (void *) pSList);
@@ -116,12 +117,25 @@ void clientTest_connectToNameServer(void **state)
   char *argv[5] = {"client", "Micke :)", "ns", "123.0.0.1", "1234"};
   client_main(5, argv);
 
+  // Free Slist
+  for (int i = 0; i < pSList->noOfServers; i++){
+    free(pSList->sInfo[i].serverName);
+  }
+  free(pSList->sInfo);
+  free(pSList);
+
+  // Free Participants
+  for(int i = 0; i < pParticipants->noOfIds; i++){
+    free(pParticipants->ids[i]);
+  }
+  free(pParticipants->ids);
+  free(pParticipants);
   fclose(fp);
 }
 
 
 int main(int argc, char* argv[]) {
-  const struct CMUnitTest tests[] = { cmocka_unit_test(clientTest_connectToNameServer)};
+  const struct CMUnitTest tests[] = { cmocka_unit_test(clientTest_connectToServer)};
   return cmocka_run_group_tests(tests, NULL, NULL);
   return 0;
 }

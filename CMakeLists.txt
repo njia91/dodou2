@@ -19,6 +19,7 @@ include_directories(lib/googletest/include lib/googletest/src)
 include_directories(lib)
 include_directories(utils)
 include_directories(client)
+include_directories(client/test)
 include_directories(lib/cmocka/include)
 
 
@@ -36,8 +37,8 @@ add_executable(client
         client/client.c
         client/client.h
         client/clientSession.c
-        utils/dod_socket.c
-        utils/dod_socket.h
+        utils/sysCall_facade.c
+        utils/sysCall_facade.h
         utils/pduCommon.c
         utils/pduReader.c
         utils/pduCreator.c
@@ -50,9 +51,10 @@ add_executable(clientTest
         client/client.c
         utils/pduCommon.c
         utils/pduCreator.c
-        utils/mocks/dod_socketMock.c
+        utils/mocks/sysCall_facadeMock.c
         utils/mocks/pduReaderMock.c
-        utils/socketReaderAPI.c)
+        utils/socketReaderAPI.c
+        client/test/ThreadingSolution.h)
 
 add_executable(testPduReader
         utils/pduCommon.c

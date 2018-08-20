@@ -6,7 +6,7 @@
 #define DODOU2_PDUREADER_H
 
 #include "pduCommon.h"
-#include "dod_socket.h"
+#include "sysCall_facade.h"
 
 void *getDataFromSocket(int socket_fd, uint8_t opCode);
 

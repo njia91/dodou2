@@ -8,6 +8,9 @@
 #include <sysCall_facade.h>
 #include <unitypes.h>
 #include <stdio.h>
+#include <stdbool.h>
+
+#include "ThreadingSolution.h"
 
 
 int facade_getAddrinfo(const char *__restrict __name,
@@ -18,7 +21,7 @@ int facade_getAddrinfo(const char *__restrict __name,
   return (int)mock();
 }
 
-void facade_freeaddrinfo(struct addrinfo **addr){
+void facade_freeaddrinfo(struct addrinfo *addr){
   return;
 }
 
@@ -30,33 +33,43 @@ int facade_bindSocket(int socket_fd, struct addrinfo **res){
   return (int)mock();
 }
 
-int connectToServer(int socket_fd, struct addrinfo **res){
+int facade_connectToServer(int socket_fd, struct addrinfo **res){
   check_expected(socket_fd);
   return (int)mock();
 }
 
-
-int acceptConnections(int socket_fd, void (*fPtr)()){
+int facade_acceptConnections(int socket_fd, void (*fPtr)()){
   return (int)mock();
 }
 
-int markSocketAsPassive(int socket_fd){
+int facade_markSocketAsPassive(int socket_fd){
   return (int)mock();
 }
 
-int setsocketopt(int socket_fd, int lvl, int opt){
+int facade_setsocketopt(int socket_fd, int lvl, int opt){
   return (int)mock();
 }
 
-int setToNonBlocking(int socket_fd){
+int facade_setToNonBlocking(int socket_fd){
   return (int)mock();
 }
 
-int writeToSocket(int socket_fd, uint8_t *packet, int size) {
+int facade_epoll_wait(int epfd, struct epoll_event *events, int maxEvents, int timeout){
+  if(IS_MOCKOBJECT_SET){
+    return (int)mock();
+  }
+  return 0;
+}
+
+int facade_epoll_ctl(int epfd, int op, int fd, struct epoll_event *event){
+  return 0;
+}
+
+int facade_writeToSocket(int socket_fd, uint8_t *packet, int size) {
   return (int)mock();
 }
 
-int readFromSocket(int socket_fd, uint8_t *buffer, int size) {
+int facade_readFromSocket(int socket_fd, uint8_t *buffer, int size) {
   *buffer = (uint8_t)mock();
   return (int)mock();
 }

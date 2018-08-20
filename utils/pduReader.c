@@ -60,7 +60,7 @@ pduSList *pduReader_SList(int socket_fd){
   uint8_t buffer[4];
   p->opCode = SLIST;
   int offset = 0;
-  readFromSocket(socket_fd, buffer, 3 * BYTE_SIZE);
+  facade_readFromSocket(socket_fd, buffer, 3 * BYTE_SIZE);
 
   if (buffer[0] != 0){
     fprintf(stderr, "Invalid padding for SList Packet \n");
@@ -73,10 +73,10 @@ pduSList *pduReader_SList(int socket_fd){
   p->sInfo = calloc(sizeof(serverInfo), p->noOfServers);
 
   for (int i = 0; i < p->noOfServers; i++){
-    readFromSocket(socket_fd, buffer, WORD_SIZE);
+    facade_readFromSocket(socket_fd, buffer, WORD_SIZE);
     memcpy(&p->sInfo[i].ipAdress, buffer, sizeof(uint32_t));
 
-    readFromSocket(socket_fd, buffer, WORD_SIZE);
+    facade_readFromSocket(socket_fd, buffer, WORD_SIZE);
     memcpy(&p->sInfo[i].port, buffer, sizeof(uint16_t));
     p->sInfo[i].port = ntohs(p->sInfo[i].port);
     memcpy(&p->sInfo[i].noOfClients, buffer + (2 * BYTE_SIZE), sizeof(uint8_t));
@@ -86,7 +86,7 @@ pduSList *pduReader_SList(int socket_fd){
 
     offset = 0;
     for (int j = 0; j < calculateNoOfWords(p->sInfo[i].serverNameLen); j++){
-      readFromSocket(socket_fd, buffer, WORD_SIZE);
+      facade_readFromSocket(socket_fd, buffer, WORD_SIZE);
       // The null-terminator indicates end of of message.
       for (int k = 0; buffer[k] != '\0' && k < 4; k++){
         p->sInfo[i].serverName[offset] = buffer[k];
@@ -197,11 +197,19 @@ pduMess *pduReader_mess(uint8_t *buffer){
 void deletePdu(void *pdu){
   uint8_t opCode = *(uint8_t*) pdu;
   if(opCode == SLIST){
-    pduSList *p = (pduSList *) pdu;
-    for (int i = 0; i < p->noOfServers; i++){
-      free(p->sInfo[i].serverName);
+    pduSList *pSList = (pduSList *) pdu;
+    for (int i = 0; i < pSList->noOfServers; i++){
+      free(pSList->sInfo[i].serverName);
     }
-    free(p->sInfo);
-    free(p);
+    free(pSList->sInfo);
+    free(pSList);
+  }
+
+  if (opCode == PARTICIPANTS){
+    pduParticipants *pParticipants = (pduParticipants *) pdu;
+    for(int i = 0; i < pParticipants->noOfIds; i++){
+      free(pParticipants->ids[i]);
+    }
+    free(pParticipants);
   }
 }

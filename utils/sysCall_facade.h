@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <sys/epoll.h>
 #include <sys/time.h>
 #include <netinet/in.h>
 #include <netdb.h>
@@ -24,30 +25,34 @@
 // Client needs a separate thread for reading and writing to socket.
 
 
-int getAddrInformation(const char * name,
+int facade_getAddrinfo(const char *name,
                        const char *service,
-                       const struct addrinfo * req,
-                       struct addrinfo ** pai);
+                       const struct addrinfo *req,
+                       struct addrinfo **pai);
 
-void freeAddrInformation(struct addrinfo **addr);
+void facade_freeaddrinfo(struct addrinfo *addr);
 
-int createSocket(struct addrinfo **res);
+int facade_createSocket(struct addrinfo **res);
 
-int bindSocket(int socket_fd, struct addrinfo **res);
+int facade_bindSocket(int socket_fd, struct addrinfo **res);
 
-int connectToServer(int socket_fd, struct addrinfo **res);
+int facade_connectToServer(int socket_fd, struct addrinfo **res);
 
-int acceptConnections(int socket_fd, void (*fPtr)());
+int facade_acceptConnections(int socket_fd, void (*fPtr)());
 
-int markSocketAsPassive(int socket_fd);
+int facade_markSocketAsPassive(int socket_fd);
 
-int setsocketopt(int socket_fd, int lvl, int opt);
+int facade_setsocketopt(int socket_fd, int lvl, int opt);
 
-int setToNonBlocking(int socket_fd);
+int facade_setToNonBlocking(int socket_fd);
 
-int writeToSocket(int socket_fd, uint8_t *packet, int size);
+int facade_epoll_wait(int epfd, struct epoll_event *events, int maxEvents, int timeout);
 
-int readFromSocket(int socket_fd, uint8_t *buffer, int size);
+int facade_epoll_ctl(int epfd, int op, int fd, struct epoll_event *event);
+
+int facade_writeToSocket(int socket_fd, uint8_t *packet, int size);
+
+int facade_readFromSocket(int socket_fd, uint8_t *buffer, int size);
 
 #endif //DODOU2_TCP_SOCKET_H
 

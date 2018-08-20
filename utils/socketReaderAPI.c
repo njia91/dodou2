@@ -4,6 +4,8 @@
 
 #include "socketReaderAPI.h"
 
+#include <stdio.h>
+
 
 void *waitForIncomingMessages(void *threadData){
   readerInfo *rInfo = (readerInfo *) threadData;
@@ -11,13 +13,14 @@ void *waitForIncomingMessages(void *threadData){
   struct epoll_event ev;
 
   int availFds = 0;
-
   while (true) {
-    availFds = epoll_wait(rInfo->epoll_fd, events, MAX_EVENTS, -1);
+    availFds = facade_epoll_wait(rInfo->epoll_fd, events, MAX_EVENTS, -1);
 
     if (availFds == -1) {
-      perror("epoll_wait");
-      exit(EXIT_FAILURE);
+      perror("epoll_wait: ");
+      break;
+    } else if (availFds == 0) { // Probably interrupted with a signal.
+      break;
     }
 
     for (int i = 0; i < availFds; ++i) {
@@ -26,10 +29,10 @@ void *waitForIncomingMessages(void *threadData){
 
       ev.data.fd = events[i].data.fd;
       ev.events = EPOLLIN | EPOLLONESHOT | EPOLLEXCLUSIVE;
-      epoll_ctl(rInfo->epoll_fd, EPOLL_CTL_ADD,events[i].data.fd, &ev);
+      facade_epoll_ctl(rInfo->epoll_fd, EPOLL_CTL_ADD,events[i].data.fd, &ev);
     }
-    break;
   }
 
+  fprintf(stdout, "KOmmer hit !! MICKE %d\n", availFds);
   pthread_exit(NULL);
 }

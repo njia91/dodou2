@@ -6,14 +6,17 @@
 
 
 #include "clientSession.h"
-#include "dod_socket.h"
+#include "sysCall_facade.h"
 #include "pduCommon.h"
 
 
 genericPdu getPduFromSocket(int socket_fd){
   uint8_t opCode = 0;
   // If failed, terminate socket and shutdown
-  int ret = readFromSocket(socket_fd, &opCode, 1);
+  printf(" \n\n NU ÄR JAG HÄR ! a!! \n");
+  int ret = facade_readFromSocket(socket_fd, &opCode, 1);
+
+
 
   if (ret == -1){
     fprintf(stderr, "getPduFromSocket(): unable to read from socket \n");
@@ -31,11 +34,14 @@ genericPdu getPduFromSocket(int socket_fd){
 }
 
 void processSocketData(int socket_fd, void *threadArgs){
+
+  printf(" \n\nTJooohoo Process SocketData!! \n");
   genericPdu p = getPduFromSocket(socket_fd);
 
   p++;
 
   // Do logic with the data from socket.
+
 }
 
 
@@ -50,7 +56,7 @@ int setupConnectionToServer(const uint8_t *ip, const char *port) {
   hints.ai_protocol=0;
   hints.ai_flags=AI_ADDRCONFIG;
 
-  int ret = getAddrInformation((char *)ip, port , &hints, &res);
+  int ret = facade_getAddrinfo((char *) ip, port, &hints, &res);
   if (ret){
     fprintf(stderr, "setupConnectionToSever(): Something wrong with getAddrInfo \n");
     exit(EXIT_FAILURE);
@@ -58,12 +64,12 @@ int setupConnectionToServer(const uint8_t *ip, const char *port) {
 
   // Try each address until we connect
   for (rp = res; rp != NULL; rp = rp->ai_next){
-    socket_fd = createSocket(&res);
+    socket_fd = facade_createSocket(&res);
     if (socket_fd ==-1){
       continue;
     }
 
-    if(connectToServer(socket_fd, &res) != -1){
+    if(facade_connectToServer(socket_fd, &res) != -1){
       break;
     }
   }
@@ -73,7 +79,7 @@ int setupConnectionToServer(const uint8_t *ip, const char *port) {
     exit(EXIT_FAILURE);
   }
 
-  freeAddrInformation(&res);
+  facade_freeaddrinfo(res);
   return socket_fd;
 }
 
@@ -85,17 +91,17 @@ int joinChatSession(int server_fd, clientData *cData){
   int bufferSize = 0;
   uint8_t *buffer = pduCreator_join(&p, &bufferSize);
 
-  int ret = writeToSocket(server_fd, buffer, bufferSize);
+  int ret = facade_writeToSocket(server_fd, buffer, bufferSize);
   if (ret == -1){
     return -1;
   }
-
+  free(buffer);
   return 0;
 }
 
 int printServerParticipants(int server_fd, clientData *cData){
   uint8_t opCode = 0;
-  int ret = readFromSocket(server_fd, &opCode, 1);
+  int ret = facade_readFromSocket(server_fd, &opCode, 1);
 
   if (ret == -1){
     fprintf(stderr, "Unable to read data from socket: %s\n", strerror(errno));
@@ -163,7 +169,7 @@ void startChatSession(clientData *cData){
   // Setup Epoll
   ev.data.fd = server_fd;
   ev.events = EPOLLIN | EPOLLONESHOT | EPOLLEXCLUSIVE;
-  epoll_ctl(epoll_fd, EPOLL_CTL_ADD,server_fd, &ev);
+  facade_epoll_ctl(epoll_fd, EPOLL_CTL_ADD,server_fd, &ev);
 
   readerInfo rInfo;
   rInfo.epoll_fd = epoll_fd;
@@ -175,6 +181,9 @@ void startChatSession(clientData *cData){
   if (ret){
     fprintf(stderr, "Unable to create a pthread. Error: %d\n", ret);
   }
+
+  int *pthread_ret;
+  pthread_join(clientThread, (void **)&pthread_ret);
   close(epoll_fd);
   close(server_fd);
 }

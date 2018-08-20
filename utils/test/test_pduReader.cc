@@ -20,7 +20,7 @@ extern "C"{
   #include <stddef.h>
   #include <setjmp.h>
   #include <cmocka.h>
-  #include "dod_socket.h"
+  #include "sysCall_facade.h"
 #ifdef __cplusplus
 }
 #endif
@@ -29,9 +29,9 @@ extern "C"{
 int globalOffset = 0;
 uint8_t *globalBuffer;
 
-int writeToSocket(int socket_fd, uint8_t *packet, int size);
+int facade_writeToSocket(int socket_fd, uint8_t *packet, int size);
 
-int readFromSocket(int socket_fd, uint8_t *buffer, int size){
+int facade_readFromSocket(int socket_fd, uint8_t *buffer, int size){
   memcpy(buffer, globalBuffer + globalOffset, size);
   globalOffset += size;
   return size;

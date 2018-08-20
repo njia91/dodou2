@@ -32,23 +32,23 @@ int establishConnectionWithNs(clientData *cData){
   hints.ai_protocol=0;
   hints.ai_flags=AI_ADDRCONFIG;
 
-  int ret = getAddrInformation((char *)cData->ipAdress, cData->port , &hints, &res);
+  int ret = facade_getAddrinfo((char *) cData->ipAdress, cData->port, &hints, &res);
 
   if (ret != 0) {
     fprintf(stderr, gai_strerror(ret));
     exit(EXIT_FAILURE);
   }
 
-  nameserver_fd = createSocket(&res);
+  nameserver_fd = facade_createSocket(&res);
 
   if (nameserver_fd == -1){
     fprintf(stderr, "Unable to setup socket to nameserver.\n");
     exit(EXIT_FAILURE);
   }
 
-  ret = connectToServer(nameserver_fd, &res);
+  ret = facade_connectToServer(nameserver_fd, &res);
 
-  freeAddrInformation(&res);
+  facade_freeaddrinfo(res);
   return nameserver_fd;
 
 }
@@ -57,14 +57,14 @@ pduSList *getServerList(int nameServer_fd){
   pduGetList getList;
   getList.opCode = GETLIST;
 
-  int ret = writeToSocket(nameServer_fd, &getList.opCode, 1);
+  int ret = facade_writeToSocket(nameServer_fd, &getList.opCode, 1);
 
   if (ret == -1 ){
     fprintf(stderr, "Unable to write data to socket.\n");
     return NULL;
   }
   uint8_t opCode = 0;
-  ret = readFromSocket(nameServer_fd, &opCode, 1);
+  ret = facade_readFromSocket(nameServer_fd, &opCode, 1);
 
   if (opCode != SLIST){
     fprintf(stderr, "Invalid packet received from Name Server.\n"
@@ -78,6 +78,10 @@ pduSList *getServerList(int nameServer_fd){
 
 int getServerChoiceFromUser(pduSList *pSList, clientData *cData){
   int userInput = 0;
+
+  // Frees old port string used to connect to NS
+  free(cData->port);
+
   do{
     userInput = -1;
     fprintf(stdout, "-----------------------------------------------------------------\n");
@@ -114,6 +118,7 @@ int getServerChoiceFromUser(pduSList *pSList, clientData *cData){
     } else {
         fprintf(stdout, "Invalid choice. Please select a server in the list.\n");
     }
+    free(buffer);
   }while(userInput == -1);
   fprintf(stdout, "\n-----------------------------------------------------------------\n\n");
 
@@ -143,13 +148,13 @@ int client_main(int argc, char **argv){
   }
 
 
-  printf("CLient name : %s, IP: %d.%d.%d.%d, Port %s \n\n", cData.username, cData.ipAdress[0],
+  printf("Client name : %s, IP: %d.%d.%d.%d, Port %s \n\n", cData.username, cData.ipAdress[0],
          cData.ipAdress[1], cData.ipAdress[2], cData.ipAdress[3], cData.port);
 
   // Start Session
 
   startChatSession(&cData);
-
+  free(cData.port);
   return 0;
 
 }

@@ -5,12 +5,12 @@
 #include <stddef.h>
 #include <setjmp.h>
 #include <cmocka.h>
-#include <dod_socket.h>
+#include <sysCall_facade.h>
 #include <unitypes.h>
 #include <stdio.h>
 
 
-int getAddrInformation(const char *__restrict __name,
+int facade_getAddrinfo(const char *__restrict __name,
                        const char *__restrict __service,
                        const struct addrinfo *__restrict __req,
                        struct addrinfo **__restrict __pai){
@@ -18,15 +18,15 @@ int getAddrInformation(const char *__restrict __name,
   return (int)mock();
 }
 
-void freeAddrInformation(struct addrinfo **addr){
+void facade_freeaddrinfo(struct addrinfo **addr){
   return;
 }
 
-int createSocket(struct addrinfo **res){
+int facade_createSocket(struct addrinfo **res){
   return (int)mock();
 }
 
-int bindSocket(int socket_fd, struct addrinfo **res){
+int facade_bindSocket(int socket_fd, struct addrinfo **res){
   return (int)mock();
 }
 

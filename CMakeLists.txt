@@ -3,7 +3,9 @@ project(dodou2)
 
 set(GCC_COVERAGE_COMPILE_FLAGS "-D_POSIX_C_SOURCE=200112L")
 
-add_definitions(-Wall -std=c99)
+set(CCOMPILE_OPTIONS
+        -Wall -Werror -std=c99)
+set(CPPCOMPILE_OPTIONS)
 
 #set(CMAKE_CXX_STANDARD 11)
 
@@ -71,8 +73,8 @@ target_link_libraries(client ${PThreadLib} UTILS)
 target_link_libraries(clientTest ${PThreadLib} ${CMOCKA_LIBRARY})
 target_link_libraries(testPduReader ${CMOCKA_LIBRARY})
 
-target_compile_options(clientTest PRIVATE "-D_POSIX_C_SOURCE=200112L")
-target_compile_options(testPduReader PRIVATE "-D_POSIX_C_SOURCE=200112L")
+target_compile_options(clientTest PRIVATE "-D_POSIX_C_SOURCE=200112L" ${CCOMPILE_OPTIONS})
+target_compile_options(testPduReader PRIVATE "-D_POSIX_C_SOURCE=200112L" ${CPPCOMPILE_OPTIONS})
 
 add_test(clientTest ${CMAKE_CURRENT_BINARY_DIR}/clientTest)
 

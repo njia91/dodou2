@@ -74,7 +74,7 @@ int setupConnectionToServer(const uint8_t *ip, const char *port) {
     }
   }
   if (rp == NULL){
-    freeaddrinfo(res);
+    facade_freeaddrinfo(res);
     fprintf(stderr,"setupConnectionToSever(): Cannot setup connection to Server: %s \n", strerror(errno));
     exit(EXIT_FAILURE);
   }

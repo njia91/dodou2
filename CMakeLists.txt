@@ -74,7 +74,7 @@ target_link_libraries(clientTest ${PThreadLib} ${CMOCKA_LIBRARY})
 target_link_libraries(testPduReader ${CMOCKA_LIBRARY})
 
 target_compile_options(clientTest PRIVATE "-D_POSIX_C_SOURCE=200112L" ${CCOMPILE_OPTIONS})
-target_compile_options(testPduReader PRIVATE "-D_POSIX_C_SOURCE=200112L" ${CPPCOMPILE_OPTIONS})
+target_compile_options(testPduReader PRIVATE ${CPPCOMPILE_OPTIONS})
 
 add_test(clientTest ${CMAKE_CURRENT_BINARY_DIR}/clientTest)
 

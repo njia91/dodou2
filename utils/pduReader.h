@@ -13,7 +13,7 @@ void *getDataFromSocket(int socket_fd, uint8_t opCode);
 //Server-nameserver interaction
 pduReq *pduReader_req(int socket_fd);
 
-pduAlive *pduReader_alive(uint8_t *buffer);
+pduAlive *pduReader_alive(int socket_fd);
 
 //Client-nameserver interaction
 pduAck *pduReader_ack(int socket_fd);

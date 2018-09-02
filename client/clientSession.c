@@ -2,10 +2,8 @@
 // Created by njia on 2018-08-01.
 //
 
-#include <pduReader.h>
-
-
 #include "clientSession.h"
+#include <pduReader.h>
 #include "sysCall_facade.h"
 #include "pduCommon.h"
 
@@ -128,8 +126,8 @@ int printServerParticipants(int server_fd, clientData *cData){
 }
 
 void readInputFromUser(){
-  int buffSize = 1056;
-  char buffer[1056];
+  size_t buffSize = 0;
+  char *buffer = NULL;
   bool active = true;
   while (active){
 

@@ -133,6 +133,14 @@ void clientTest_connectToServer(void **state)
   fclose(fp);
 }
 
+void clientTest_recieveAndSendDatafromServer{
+  FILE *fp;
+
+  fp = freopen("../testSupport/connectToNs.txt", "r", stdin);
+
+
+};
+
 
 int main(int argc, char* argv[]) {
   const struct CMUnitTest tests[] = { cmocka_unit_test(clientTest_connectToServer)};

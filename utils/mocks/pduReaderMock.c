@@ -14,26 +14,26 @@ void *getDataFromSocket(int socket_fd, uint8_t opCode){
 }
 
 //Server-nameserver interaction
-pduReq *pduReader_req(uint8_t *buffer);
+pduReq *pduReader_req(int socket_fd);
 
-pduAlive *pduReader_alive(uint8_t *buffer);
+pduAlive *pduReader_alive(int socket_fd);
 
 //Client-nameserver interaction
-pduAck *pduReader_ack(uint8_t *buffer);
+pduAck *pduReader_ack(int socket_fd);
 
 pduSList *pduReader_SList(int socket_fd){
   return (pduSList *)mock();
 }
 
 //Client-server interaction
-pduJoin *pduReader_join(uint8_t *buffer);
+pduJoin *pduReader_join(int socket_fd);
 
-pduPJoin *pduReader_pJoin(uint8_t *buffer);
+pduPJoin *pduReader_pJoin(int socket_fd);
 
-pduPLeave *pduReader_pleave(uint8_t *buffer);
+pduPLeave *pduReader_pleave(int socket_fd);
 
-pduParticipants *pduReader_participants(uint8_t *buffer);
+pduParticipants *pduReader_participants(int socket_fd);
 
-pduQuit *pduReader_quit(uint8_t *buffer);
+pduQuit *pduReader_quit(int socket_fd);
 
-pduMess *pduReader_mess(uint8_t *buffer);
+pduMess *pduReader_mess(int socket_fd);

@@ -5,7 +5,7 @@
 #ifndef DODOU2_CLIENTSESSION_H
 #define DODOU2_CLIENTSESSION_H
 
-
+#define _GNU_SOURCE
 
 #include <stdio.h>
 #include "client.h"

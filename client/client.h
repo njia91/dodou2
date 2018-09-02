@@ -5,16 +5,19 @@
 #ifndef DODOU2_CLIENT_H
 #define DODOU2_CLIENT_H
 
+#define _GNU_SOURCE
+
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
 #include <sysCall_facade.h>
-#include <netdb.h>
 
+#include <netdb.h>
 #include "pduCommon.h"
 #include "pduReader.h"
+
 #include "pduCreator.h"
 
 static const size_t MAX_SIZE = 1024;

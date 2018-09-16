@@ -12,6 +12,9 @@ void *waitForIncomingMessages(void *threadData){
   struct epoll_event events[MAX_EVENTS];
   struct epoll_event ev;
 
+
+
+
   int availFds = 0;
   while (true) {
     availFds = facade_epoll_wait(rInfo->epoll_fd, events, MAX_EVENTS, -1);
@@ -26,6 +29,7 @@ void *waitForIncomingMessages(void *threadData){
     for (int i = 0; i < availFds; ++i) {
       // read data from available FD;
       rInfo->func(events[i].data.fd, (void *) rInfo);
+      fprintf(stdout, "KOmmer hit !! MICKE  %d\n", availFds);
 
       ev.data.fd = events[i].data.fd;
       ev.events = EPOLLIN | EPOLLONESHOT | EPOLLEXCLUSIVE;
@@ -33,6 +37,5 @@ void *waitForIncomingMessages(void *threadData){
     }
   }
 
-  fprintf(stdout, "KOmmer hit !! MICKE %d\n", availFds);
   pthread_exit(NULL);
 }

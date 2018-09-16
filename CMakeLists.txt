@@ -14,7 +14,11 @@ set(UTILS_SOURCE
         utils/pduCommon.c
         utils/pduReader.c
         utils/pduCreator.c
+        utils/sysCall_facade.c
+        utils/socketReaderAPI.c
         utils/list.c)
+
+set(CMOCKA_SRC lib/cmocka/build/src)
 
 
 include_directories(lib/googletest/include lib/googletest/src)
@@ -23,12 +27,16 @@ include_directories(utils)
 include_directories(client)
 include_directories(client/test)
 include_directories(lib/cmocka/include)
+include_directories(lib/cmocka/build/src)
 
 
-find_library(CMOCKA_LIBRARY lib/cmocka/build/src)
+find_library(CMOCKA_LIBRARY libcmocka_shared.so)
 
 add_subdirectory(lib/googletest)
 link_directories({CMAKE_SOURCE_DIR}/lib)
+link_directories(utils)
+
+
 
 add_executable(testPduCreator
         utils/pduCommon.c
@@ -36,6 +44,7 @@ add_executable(testPduCreator
         utils/test/test_pduCreator.cc)
 
 add_executable(client
+        client/clientMain.c
         client/client.c
         client/client.h
         client/clientSession.c
@@ -67,9 +76,11 @@ add_executable(testPduReader
 
 add_library(UTILS ${UTILS_SOURCE})
 
+
+
 target_link_libraries(testPduCreator ${PThreadLib} ${CMAKE_SOURCE_DIR}/lib/libgtest.a)
 target_link_libraries(testPduReader ${PThreadLib} ${CMAKE_SOURCE_DIR}/lib/libgtest.a)
-target_link_libraries(client ${PThreadLib} UTILS)
+target_link_libraries(client ${PThreadLib} ${UTILS})
 target_link_libraries(clientTest ${PThreadLib} ${CMOCKA_LIBRARY})
 target_link_libraries(testPduReader ${CMOCKA_LIBRARY})
 

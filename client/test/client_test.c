@@ -11,6 +11,8 @@
 #include "client.h"
 #include "pduCommon.h"
 #include "pduReader.h"
+#include "socketReaderAPI.h"
+#include "clientSession.h"
 
 /*
 
@@ -85,7 +87,6 @@ void clientTest_connectToServer(void **state)
   struct addrinfo retAddr;
   FILE *fp;
   IS_MOCKOBJECT_SET = false;
-
   fp = freopen("../testSupport/connectToNs.txt", "r", stdin);
 
   int fd = 545;
@@ -133,17 +134,49 @@ void clientTest_connectToServer(void **state)
   fclose(fp);
 }
 
-void clientTest_recieveAndSendDatafromServer{
+void clientTest_recieveAndSendDatafromServer(){
   FILE *fp;
+  fp = freopen("../testSupport/dataSentFromServer.txt", "r", stdin);
+  IS_MOCKOBJECT_SET = true;
 
-  fp = freopen("../testSupport/connectToNs.txt", "r", stdin);
+//  readerInfo *rInfo = (readerInfo *)calloc(1, sizeof(readerInfo));
+  readerInfo rInfo;
 
+  will_return(facade_epoll_wait, 1);
 
+  rInfo.epoll_fd = 1;
+  rInfo.packetList = NULL;
+  rInfo.func = processSocketData;
+
+  uint8_t opCode1 = 10;
+  char id[] = "Michael";
+  char mess[] = "First mess ";
+  pduMess *mess1 = calloc(1, sizeof(readerInfo));
+  mess1->id = (uint8_t *) id;
+  mess1->message = (uint8_t *) mess;
+  mess1->checkSum = 255;
+  mess1->messageSize = (uint16_t) strlen(mess);
+  mess1->idSize = (uint8_t) strlen(id);
+  mess1->opCode = opCode1;
+
+  will_return(facade_readFromSocket, opCode1);
+  will_return(getDataFromSocket, mess1);
+
+  waitForIncomingMessages((void *) &(rInfo));
+
+  fclose(fp);
 };
 
 
 int main(int argc, char* argv[]) {
-  const struct CMUnitTest tests[] = { cmocka_unit_test(clientTest_connectToServer)};
+//  const struct CMUnitTest tests[] = {
+//          cmocka_unit_test(clientTest_connectToServer),
+//          cmocka_unit_test(clientTest_recieveAndSendDatafromServer),
+//          };
+
+  const struct CMUnitTest tests[] = {
+          cmocka_unit_test(clientTest_recieveAndSendDatafromServer),
+  };
   return cmocka_run_group_tests(tests, NULL, NULL);
   return 0;
 }

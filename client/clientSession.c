@@ -11,17 +11,18 @@
 genericPdu getPduFromSocket(int socket_fd){
   uint8_t opCode = 0;
   // If failed, terminate socket and shutdown
-  printf(" \n\n NU ÄR JAG HÄR ! a!! \n");
   int ret = facade_readFromSocket(socket_fd, &opCode, 1);
 
-
+  printf(" NU ÄR JAG HÄR ! OPCODE %u !! \n", opCode);
 
   if (ret == -1){
     fprintf(stderr, "getPduFromSocket(): unable to read from socket \n");
     exit(EXIT_FAILURE);
   }
 
-  void *pdu = getDataFromSocket(socket_fd, opCode);
+  pduMess *pdu = (pduMess*) getDataFromSocket(socket_fd, opCode);
+
+  printf("Messalende från PDU %s", pdu->message);
 
   if (pdu == NULL){
     fprintf(stderr, "getDataFromSocket(): returned NULL \n");
@@ -31,9 +32,9 @@ genericPdu getPduFromSocket(int socket_fd){
 
 }
 
-void processSocketData(int socket_fd, void *threadArgs){
+void processSocketData(int socket_fd, void *args){
 
-  printf(" \n\nTJooohoo Process SocketData!! \n");
+  printf(" TJooohoo Process SocketData!! \n");
   genericPdu p = getPduFromSocket(socket_fd);
 
   p++;

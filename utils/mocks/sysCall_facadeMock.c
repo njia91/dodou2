@@ -71,5 +71,5 @@ int facade_writeToSocket(int socket_fd, uint8_t *packet, int size) {
 
 int facade_readFromSocket(int socket_fd, uint8_t *buffer, int size) {
   *buffer = (uint8_t)mock();
-  return (int)mock();
+  return size;
 }

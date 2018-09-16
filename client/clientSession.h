@@ -16,7 +16,7 @@
 
 genericPdu getPduFromSocket(int socket_fd);
 
-void processSocketData(int socket_fd, void *threadArgs);
+void processSocketData(int socket_fd, void *args);
 
 void startChatSession(clientData *cData);
 

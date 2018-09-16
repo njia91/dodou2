@@ -2,10 +2,6 @@
 // Created by njia on 2018-07-08.
 //
 
-
-
-
-
 #include "sysCall_facade.h"
 #include <netdb.h>
 
@@ -73,9 +69,19 @@ int tcp_acceptConnections(int socket_fd, void (*fPtr)()){
   return accept(socket_fd, NULL, NULL);
 }
 
-int facade_epoll_wait(int epfd, struct epoll_event *events, int maxEvents, int timeout);
+int facade_epoll_wait(int epfd, struct epoll_event *events, int maxEvents, int timeout){
+  return 0;
+}
 
-int facade_writeToSocket(int socket_fd, uint8_t *packet, int size);
+int facade_epoll_ctl(int epfd, int op, int fd, struct epoll_event *event){
+  return 0;
+}
 
-int facade_readFromSocket(int socket_fd, uint8_t *buffer, int size);
+int facade_writeToSocket(int socket_fd, uint8_t *packet, int size){
+  return 0;
+}
+
+int facade_readFromSocket(int socket_fd, uint8_t *buffer, int size){
+  return 0;
+}
 

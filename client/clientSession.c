@@ -8,37 +8,27 @@
 #include "pduCommon.h"
 
 
-genericPdu getPduFromSocket(int socket_fd){
-  uint8_t opCode = 0;
+genericPdu *getPduFromSocket(int socket_fd){
   // If failed, terminate socket and shutdown
-  int ret = facade_readFromSocket(socket_fd, &opCode, 1);
-
-  printf(" NU ÄR JAG HÄR ! OPCODE %u !! \n", opCode);
-
-  if (ret == -1){
-    fprintf(stderr, "getPduFromSocket(): unable to read from socket \n");
-    exit(EXIT_FAILURE);
-  }
-
-  pduMess *pdu = (pduMess*) getDataFromSocket(socket_fd, opCode);
-
-  printf("Messalende från PDU %s", pdu->message);
+  genericPdu *pdu =  getDataFromSocket(socket_fd);
 
   if (pdu == NULL){
     fprintf(stderr, "getDataFromSocket(): returned NULL \n");
   }
 
-  return pdu;
+  printf(" NU ÄR JAG HÄR ! OPCODE %u !! \n", pdu->opCode);
 
+  return pdu;
 }
 
 void processSocketData(int socket_fd, void *args){
 
   printf(" TJooohoo Process SocketData!! \n");
-  genericPdu p = getPduFromSocket(socket_fd);
+  genericPdu *p = getPduFromSocket(socket_fd);
 
   p++;
 
+  printf("Nu dör jag... \n");
   // Do logic with the data from socket.
 
 }
@@ -99,22 +89,21 @@ int joinChatSession(int server_fd, clientData *cData){
 }
 
 int printServerParticipants(int server_fd, clientData *cData){
-  uint8_t opCode = 0;
-  int ret = facade_readFromSocket(server_fd, &opCode, 1);
+  genericPdu *pdu = getDataFromSocket(server_fd);
 
-  if (ret == -1){
+  if (pdu == NULL){
     fprintf(stderr, "Unable to read data from socket: %s\n", strerror(errno));
   }
 
-  if (opCode != PARTICIPANTS){
+  if (pdu->opCode != PARTICIPANTS){
     fprintf(stderr, "Invalid packet received from Server.\n"
                     "Expected: %d\n"
-                    "Actual: %d\n", PARTICIPANTS, opCode);
+                    "Actual: %d\n", PARTICIPANTS, pdu->opCode);
     close(server_fd);
     exit(EXIT_FAILURE);
   }
 
-  pduParticipants *p = (pduParticipants *) getDataFromSocket(server_fd, opCode);
+  pduParticipants *p = (pduParticipants *) pdu;
 
   fprintf(stdout, "-----------------------------------------------------------------\n");
   fprintf(stdout, "Online users: \n");

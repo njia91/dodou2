@@ -62,7 +62,7 @@ pduSList *createSListPdu(){
 pduParticipants *createParticipantsPdu(){
   pduParticipants *p;
   p = (pduParticipants *) calloc(1, sizeof(pduParticipants));
-  p->opCode = JOIN;
+  p->opCode = PARTICIPANTS;
   p->noOfIds = 3;
   p->ids = calloc(sizeof(serverInfo), p->noOfIds);
 
@@ -97,10 +97,10 @@ void clientTest_connectToServer(void **state)
 
 
   will_return_always(facade_writeToSocket, 1);
-  will_return(facade_readFromSocket, SLIST);
-  will_return(facade_readFromSocket, 1);
-  will_return(facade_readFromSocket, PARTICIPANTS);
-  will_return(facade_readFromSocket, 1);
+ // will_return(facade_readFromSocket, SLIST);
+  //will_return(facade_readFromSocket, 1);
+  //will_return(facade_readFromSocket, PARTICIPANTS);
+  //will_return(facade_readFromSocket, 1);
 
 
   pSList = createSListPdu();
@@ -169,14 +169,14 @@ void clientTest_recieveAndSendDatafromServer(){
 
 
 int main(int argc, char* argv[]) {
-//  const struct CMUnitTest tests[] = {
-//          cmocka_unit_test(clientTest_connectToServer),
-//          cmocka_unit_test(clientTest_recieveAndSendDatafromServer),
-//          };
-
   const struct CMUnitTest tests[] = {
+          cmocka_unit_test(clientTest_connectToServer),
           cmocka_unit_test(clientTest_recieveAndSendDatafromServer),
-  };
+          };
+
+//  const struct CMUnitTest tests[] = {
+//          cmocka_unit_test(clientTest_recieveAndSendDatafromServer),
+//  };
   return cmocka_run_group_tests(tests, NULL, NULL);
   return 0;
 }

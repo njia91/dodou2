@@ -17,7 +17,7 @@ static const uint8_t MESS          = 10;
 static const uint8_t QUIT          = 11; 
 static const uint8_t JOIN          = 12;
 static const uint8_t PJOIN         = 16;
-static const uint8_t PLEAVE        = 19;
+static const uint8_t PLEAVE        = 17;
 static const uint8_t PARTICIPANTS  = 19;
 static const uint8_t NOTREQ        = 100;
 
@@ -92,10 +92,14 @@ typedef struct {
 } pduQuit;
 
 
+// Only used to read opCode.
+typedef struct {
+    uint8_t opCode;
+} genericPdu;
 
 typedef pduPJoin pduPLeave;
 typedef pduQuit pduGetList;
-typedef void *genericPdu;
+//typedef void *genericPdu;
 
 
 uint8_t calculateCheckSum(void *p, int size);

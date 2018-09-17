@@ -63,17 +63,17 @@ pduSList *getServerList(int nameServer_fd){
     fprintf(stderr, "Unable to write data to socket.\n");
     return NULL;
   }
-  uint8_t opCode = 0;
-  ret = facade_readFromSocket(nameServer_fd, &opCode, 1);
 
-  if (opCode != SLIST){
+  genericPdu *pdu = getDataFromSocket(nameServer_fd);
+
+  if (pdu->opCode != SLIST){
     fprintf(stderr, "Invalid packet received from Name Server.\n"
                     "Expected: %d\n"
-                    "Actual: %d\n", SLIST, opCode);
+                    "Actual: %d\n", SLIST, pdu->opCode);
 
     exit(EXIT_FAILURE);
   }
-  return (pduSList *)getDataFromSocket(nameServer_fd, opCode);
+  return (pduSList *) pdu;
 }
 
 int getServerChoiceFromUser(pduSList *pSList, clientData *cData){

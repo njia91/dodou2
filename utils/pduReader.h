@@ -8,7 +8,7 @@
 #include "pduCommon.h"
 #include "sysCall_facade.h"
 
-void *getDataFromSocket(int socket_fd, uint8_t opCode);
+void *getDataFromSocket(int socket_fd);
 
 //Server-nameserver interaction
 pduReq *pduReader_req(int socket_fd);

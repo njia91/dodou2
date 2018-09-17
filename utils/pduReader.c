@@ -14,8 +14,17 @@
 #include "pduCommon.h"
 
 
-void *getDataFromSocket(int socket_fd, uint8_t opCode){
+void *getDataFromSocket(int socket_fd) {
   void *pdu = NULL;
+
+  uint8_t opCode
+
+  int ret = facade_readFromSocket(socket_fd, &opCode, 1);
+
+  if (ret == 0){
+    fprintf("Could not read data from Socket.\n")
+    return NULL;
+  }
 
   if(opCode == SLIST){
     pdu = pduReader_SList(socket_fd);

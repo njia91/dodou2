@@ -9,7 +9,7 @@
 #include <cmocka.h>
 #include "pduReader.h"
 
-void *getDataFromSocket(int socket_fd, uint8_t opCode){
+void *getDataFromSocket(int socket_fd) {
   return (void *)mock();
 }
 

@@ -14,7 +14,7 @@
 #include <sys/epoll.h>
 #include "socketReaderAPI.h"
 
-genericPdu getPduFromSocket(int socket_fd);
+genericPdu *getPduFromSocket(int socket_fd);
 
 void processSocketData(int socket_fd, void *args);
 

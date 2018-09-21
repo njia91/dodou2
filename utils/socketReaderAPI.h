@@ -15,7 +15,7 @@
 
 static const int MAX_EVENTS = 32;
 
-typedef void processEvent(int, void *);
+typedef bool processEvent(int, void *);
 
 typedef struct {
   int epoll_fd;

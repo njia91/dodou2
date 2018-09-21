@@ -33,7 +33,7 @@ pduParticipants *pduReader_participants(int socket_fd);
 
 pduMess *pduReader_mess(int socket_fd);
 
-void deletePdu(void *pdu);
+void deletePdu(genericPdu *pdu);
 
 
 #endif //DODOU2_PDUREADER_H

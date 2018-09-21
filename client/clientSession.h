@@ -13,10 +13,19 @@
 #include <pthread.h>
 #include <sys/epoll.h>
 #include "socketReaderAPI.h"
+#include <time.h>
 
 genericPdu *getPduFromSocket(int socket_fd);
 
-void processSocketData(int socket_fd, void *args);
+bool processSocketData(int socket_fd, void *args);
+
+void notifyUserOfChatRoomChanges(pduPJoin *pJoin);
+
+void handlePLeacePdu(pduPLeave *pLeave);
+
+void handleQuitPdu(pduQuit *quit);
+
+void handleMessPdu(pduMess *mess);
 
 void startChatSession(clientData *cData);
 

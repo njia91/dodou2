@@ -2,6 +2,8 @@
 #define __PDUCOMMON
 
 #include <stdint.h>
+#include <stdio.h>
+#include <time.h>
 
 static const uint8_t BYTE_SIZE     = 1;
 static const uint8_t WORD_SIZE     = 4;
@@ -105,5 +107,7 @@ typedef pduQuit pduGetList;
 uint8_t calculateCheckSum(void *p, int size);
 
 int calculateNoOfWords(int packetSize);
+
+void convertTimeToString(char *timeStr, struct tm *timeInfo);
 
 #endif

@@ -295,22 +295,32 @@ pduMess *pduReader_mess(int socket_fd){
 }
 
 
-void deletePdu(void *pdu){
-  uint8_t opCode = *(uint8_t*) pdu;
-  if(opCode == SLIST){
+void deletePdu(genericPdu *pdu){
+  uint8_t opCode = pdu->opCode;
+
+  if (opCode == SLIST){
     pduSList *pSList = (pduSList *) pdu;
     for (int i = 0; i < pSList->noOfServers; i++){
       free(pSList->sInfo[i].serverName);
     }
     free(pSList->sInfo);
     free(pSList);
-  }
-
-  if (opCode == PARTICIPANTS){
+  } else if (opCode == PARTICIPANTS){
     pduParticipants *pParticipants = (pduParticipants *) pdu;
     for(int i = 0; i < pParticipants->noOfIds; i++){
       free(pParticipants->ids[i]);
     }
     free(pParticipants);
+  } else if (opCode == PJOIN || opCode == PLEAVE){
+    pduPJoin *pJoin = (pduJoin *) pdu;
+    free(pJoin.id);
+    free(pJoin);
+  } else if (opCode == QUIT || opCode == GETLIST){
+    free(pdu);
+  } else if (opCode == MESS) {
+    pduMess *pMess = (pduMess *) pdu;
+    free(pMess->message);
+    free(pMess->id);
+    free(pMess);
   }
 }

@@ -37,3 +37,34 @@ pduParticipants *pduReader_participants(int socket_fd);
 pduQuit *pduReader_quit(int socket_fd);
 
 pduMess *pduReader_mess(int socket_fd);
+
+// Copy paste from target code.
+void deletePdu(genericPdu *pdu){
+  uint8_t opCode = pdu->opCode;
+
+  if (opCode == SLIST){
+    pduSList *pSList = (pduSList *) pdu;
+    for (int i = 0; i < pSList->noOfServers; i++){
+      free(pSList->sInfo[i].serverName);
+    }
+    free(pSList->sInfo);
+    free(pSList);
+  } else if (opCode == PARTICIPANTS){
+    pduParticipants *pParticipants = (pduParticipants *) pdu;
+    for(int i = 0; i < pParticipants->noOfIds; i++){
+      free(pParticipants->ids[i]);
+    }
+    free(pParticipants);
+  } else if (opCode == PJOIN || opCode == PLEAVE){
+    pduPJoin *pJoin = (pduPJoin *) pdu;
+    free(pJoin->id);
+    free(pJoin);
+  } else if (opCode == QUIT || opCode == GETLIST){
+    free(pdu);
+  } else if (opCode == MESS) {
+    pduMess *pMess = (pduMess *) pdu;
+    free(pMess->message);
+    free(pMess->id);
+    free(pMess);
+  }
+}

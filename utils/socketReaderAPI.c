@@ -11,12 +11,11 @@ void *waitForIncomingMessages(void *threadData){
   readerInfo *rInfo = (readerInfo *) threadData;
   struct epoll_event events[MAX_EVENTS];
   struct epoll_event ev;
-
-
+  bool isSessionActive = true;
 
 
   int availFds = 0;
-  while (true) {
+  while (isSessionActive) {
     availFds = facade_epoll_wait(rInfo->epoll_fd, events, MAX_EVENTS, -1);
 
     if (availFds == -1) {
@@ -28,14 +27,20 @@ void *waitForIncomingMessages(void *threadData){
 
     for (int i = 0; i < availFds; ++i) {
       // read data from available FD;
-      rInfo->func(events[i].data.fd, (void *) rInfo);
+      isSessionActive = rInfo->func(events[i].data.fd, (void *) rInfo);
       fprintf(stdout, "KOmmer hit !! MICKE  %d\n", availFds);
-
-      ev.data.fd = events[i].data.fd;
-      ev.events = EPOLLIN | EPOLLONESHOT | EPOLLEXCLUSIVE;
-      facade_epoll_ctl(rInfo->epoll_fd, EPOLL_CTL_ADD,events[i].data.fd, &ev);
+      if (isSessionActive){
+        ev.data.fd = events[i].data.fd;
+        ev.events = EPOLLIN | EPOLLONESHOT | EPOLLEXCLUSIVE;
+        facade_epoll_ctl(rInfo->epoll_fd, EPOLL_CTL_ADD,events[i].data.fd, &ev);
+      }
+      else {
+        printf("AVSLUTA NU! \n");
+        break;
+      }
     }
   }
-
+  printf("AVSLUTA SLUT PÅ FUNCTION!!! \n");
+  return NULL;
   pthread_exit(NULL);
 }

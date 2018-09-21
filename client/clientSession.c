@@ -16,21 +16,51 @@ genericPdu *getPduFromSocket(int socket_fd){
     fprintf(stderr, "getDataFromSocket(): returned NULL \n");
   }
 
-  printf(" NU ÄR JAG HÄR ! OPCODE %u !! \n", pdu->opCode);
+  printf(" NU ÄR JAG HÄR ! OPCODE  !! \n");
 
   return pdu;
 }
 
-void processSocketData(int socket_fd, void *args){
-
+bool processSocketData(int socket_fd, void *args){
   printf(" TJooohoo Process SocketData!! \n");
   genericPdu *p = getPduFromSocket(socket_fd);
+  bool allOk = true;
 
-  p++;
+  if (p == NULL){
+    printf("REturn false ProcessSocketData\n");
+    return false;
+  }
+
+  if (p->opCode == PJOIN || p->opCode == PLEAVE){
+    notifyUserOfChatRoomChanges((pduPJoin *) p);
+  } else if (p->opCode == QUIT){
+    fprintf(stderr, "\nChat server has terminated the session. Terminating \n");
+    allOk = false;
+  } else if (p->opCode == MESS){
+    handleMessPdu((pduMess *) p);
+  }
+
 
   printf("Nu dör jag... \n");
   // Do logic with the data from socket.
 
+  deletePdu(p);
+
+  return allOk;
+}
+
+void notifyUserOfChatRoomChanges(pduPJoin *pJoin){
+  struct tm *timeInfo = localtime((time_t *) &pJoin->timeStamp);
+  char timeString[20];
+  convertTimeToString(timeString, timeInfo);
+  fprintf(stdout, "%s > User %s has %s the chat room \n", timeString, pJoin->id, pJoin->opCode == PJOIN ? "joined" : "left");
+}
+
+void handleMessPdu(pduMess *mess){
+  struct tm *timeInfo = localtime((time_t *) &mess->timeStamp);
+  char timeString[20];
+  convertTimeToString(timeString, timeInfo);
+  fprintf(stdout, "%s > [%s] %s \n", timeString, mess->id, mess->message);
 }
 
 

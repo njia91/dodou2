@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <time.h>
+#include <stdbool.h>
 
 static const uint8_t BYTE_SIZE     = 1;
 static const uint8_t WORD_SIZE     = 4;
@@ -75,7 +76,7 @@ typedef struct {
 typedef struct {
   uint8_t   opCode;
   uint8_t   idSize;
-  uint8_t   checkSum;
+  bool      isCheckSumOk;
   uint16_t   messageSize;
   uint8_t   *message;
   uint8_t   *id;

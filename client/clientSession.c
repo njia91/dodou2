@@ -57,10 +57,14 @@ void notifyUserOfChatRoomChanges(pduPJoin *pJoin){
 }
 
 void handleMessPdu(pduMess *mess){
-  struct tm *timeInfo = localtime((time_t *) &mess->timeStamp);
-  char timeString[20];
-  convertTimeToString(timeString, timeInfo);
-  fprintf(stdout, "%s > [%s] %s \n", timeString, mess->id, mess->message);
+  if (mess->isCheckSumOk){
+    struct tm *timeInfo = localtime((time_t *) &mess->timeStamp);
+    char timeString[20];
+    convertTimeToString(timeString, timeInfo);
+    fprintf(stdout, "%s > [%s] %s \n", timeString, mess->id, mess->message);
+  } else {
+    fprintf(stderr, "Invalid checksum....\n");
+  }
 }
 
 
@@ -88,7 +92,7 @@ int setupConnectionToServer(const uint8_t *ip, const char *port) {
       continue;
     }
 
-    if(facade_connectToServer(socket_fd, &res) != -1){
+    if(facade_connect(socket_fd, &res) != -1){
       break;
     }
   }

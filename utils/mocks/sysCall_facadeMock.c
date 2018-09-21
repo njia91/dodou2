@@ -33,7 +33,7 @@ int facade_bindSocket(int socket_fd, struct addrinfo **res){
   return (int)mock();
 }
 
-int facade_connectToServer(int socket_fd, struct addrinfo **res){
+int facade_connect(int socket_fd, struct addrinfo **res){
   check_expected(socket_fd);
   return (int)mock();
 }
@@ -65,11 +65,11 @@ int facade_epoll_ctl(int epfd, int op, int fd, struct epoll_event *event){
   return 0;
 }
 
-int facade_writeToSocket(int socket_fd, uint8_t *packet, int size) {
+ssize_t facade_writeToSocket(int socket_fd, uint8_t *packet, int size) {
   return (int)mock();
 }
 
-int facade_readFromSocket(int socket_fd, uint8_t *buffer, int size) {
+ssize_t facade_readFromSocket(int socket_fd, uint8_t *buffer, int size) {
   *buffer = (uint8_t)mock();
   return size;
 }

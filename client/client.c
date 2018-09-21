@@ -8,14 +8,15 @@
 
 
 void parseArgs(int argc, char **argv, clientData *args) {
-  if (argc < 4) {
+  if (argc <= 4) {
     fprintf(stderr, "Too few or too many Arguments \n"
-                    "<ProgramName> [localPort] [remote IP Adress] [remote Port]\n");
+                    "[Username] [localPort] [remote IP Adress] [remote Port]\n");
     exit(EXIT_FAILURE);
   }
   args->username = argv[1];
   args->contactNS = strcmp("ns", argv[2]) ? false : true;
-  memcpy(args->ipAdress, argv[3], sizeof(uint32_t));
+  args->ipAdress = argv[3];
+  //memcpy(args->ipAdress, argv[3], sizeof(uint32_t));
   args->port = calloc(sizeof(uint8_t), PORT_LENGTH);
   memcpy(args->port, argv[4], PORT_LENGTH - 1);
 
@@ -35,7 +36,7 @@ int establishConnectionWithNs(clientData *cData){
   int ret = facade_getAddrinfo((char *) cData->ipAdress, cData->port, &hints, &res);
 
   if (ret != 0) {
-    fprintf(stderr, gai_strerror(ret));
+    fprintf(stderr, "%s \n",gai_strerror(ret));
     exit(EXIT_FAILURE);
   }
 
@@ -46,7 +47,11 @@ int establishConnectionWithNs(clientData *cData){
     exit(EXIT_FAILURE);
   }
 
-  ret = facade_connectToServer(nameserver_fd, &res);
+  ret = facade_connect(nameserver_fd, &res);
+  if (ret == -1){
+    fprintf(stderr, "Could not connect to NameServer %s \n", strerror(errno));
+  }
+
 
   facade_freeaddrinfo(res);
   return nameserver_fd;
@@ -54,10 +59,15 @@ int establishConnectionWithNs(clientData *cData){
 }
 
 pduSList *getServerList(int nameServer_fd){
-  pduGetList getList;
-  getList.opCode = GETLIST;
+  uint8_t *getList = pduCreator_getList();
 
-  int ret = facade_writeToSocket(nameServer_fd, &getList.opCode, 1);
+  ssize_t ret = facade_writeToSocket(nameServer_fd, getList, WORD_SIZE);
+
+  free(getList);
+
+  if (ret != WORD_SIZE){
+    fprintf(stderr, "could not sent all data");
+  }
 
   if (ret == -1 ){
     fprintf(stderr, "Unable to write data to socket.\n");
@@ -82,10 +92,15 @@ int getServerChoiceFromUser(pduSList *pSList, clientData *cData){
   // Frees old port string used to connect to NS
   free(cData->port);
 
+  if (pSList->noOfServers == 0){
+    fprintf(stderr, "No available or active chat servers on this name-server. Terminating program \n");
+    return 0;
+  }
+
   do{
     userInput = -1;
     fprintf(stdout, "-----------------------------------------------------------------\n");
-    fprintf(stdout, "List of available servers.: \n");
+    fprintf(stdout, "List of available servers: \n");
     for (int i = 0; i < pSList->noOfServers; i++){
       fprintf(stdout, "-----------------------------------------------------------------\n");
       fprintf(stdout, "Server ID \t: %d\n", i + 1);
@@ -140,9 +155,9 @@ int client_main(int argc, char **argv){
       exit(EXIT_FAILURE);
     }
     int ret = getServerChoiceFromUser(pSList, &cData);
+    deletePdu(pSList);
 
     if (ret == 0){
-      fprintf(stdout, "User chose to terminate the session \n");
       exit(EXIT_SUCCESS);
     }
   }

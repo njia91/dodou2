@@ -92,9 +92,9 @@ void clientTest_connectToServer(void **state)
 
   int fd = 545;
   will_return_always(facade_createSocket, fd);
-  will_return_always(facade_connectToServer, 0);
-  expect_value(facade_connectToServer, socket_fd, fd);
-  expect_value(facade_connectToServer, socket_fd, fd);
+  will_return_always(facade_connect, 0);
+  expect_value(facade_connect, socket_fd, fd);
+  expect_value(facade_connect, socket_fd, fd);
 
 
   will_return_always(facade_writeToSocket, 1);
@@ -159,7 +159,7 @@ void clientTest_recieveAndSendDatafromServer(){
   memcpy(mess1->message, mess, mess1->messageSize + 1);
   mess1->id = calloc(mess1->idSize, sizeof(uint8_t) + 1);
   memcpy(mess1->id, id, mess1->idSize + 1);
-  mess1->checkSum = 255;
+  mess1->isCheckSumOk = 255;
   mess1->opCode = MESS;
 
   pduPJoin *pJoin = calloc(1, sizeof(pduPJoin));

@@ -29,9 +29,9 @@ extern "C"{
 int globalOffset;
 uint8_t *globalBuffer;
 
-int facade_writeToSocket(int socket_fd, uint8_t *packet, int size);
+ssize_t facade_writeToSocket(int socket_fd, uint8_t *packet, int size);
 
-int facade_readFromSocket(int socket_fd, uint8_t *buffer, int size){
+ssize_t facade_readFromSocket(int socket_fd, uint8_t *buffer, int size){
   memcpy(buffer, globalBuffer + globalOffset, size);
   globalOffset += size;
   return size;
@@ -202,7 +202,7 @@ TEST_F(PduReaderTest, read_sListPacket){
     EXPECT_EQ(ret->sInfo[1].ipAdress[i], s[1].ipAdress[i]);
   }
 
-  deletePdu(ret);
+  deletePdu((genericPdu *) ret);
   free(s);
   free(buffer);
 }
@@ -331,12 +331,7 @@ TEST_F(PduReaderTest, read_mess){
   globalBuffer = retVal + 1;
   pduMess *ret = pduReader_mess(4);
 
-  uint8_t retChecksum = calculateCheckSum((void*) &ret->opCode, 1);
-  retChecksum += calculateCheckSum((void*) &ret->idSize, 1);
-  retChecksum += calculateCheckSum((void*) &ret->messageSize, 2);
-  retChecksum += calculateCheckSum((void*) &ret->timeStamp, 4);
-  retChecksum += calculateCheckSum((void *) ret->message,  ret->messageSize);
-  retChecksum += calculateCheckSum((void *) ret->id, ret->idSize);
+
 
   EXPECT_EQ(ret->opCode, MESS);
   EXPECT_EQ(r.timeStamp, ret->timeStamp);
@@ -345,8 +340,8 @@ TEST_F(PduReaderTest, read_mess){
   EXPECT_EQ(strcmp((char *)r.message, (char *) ret->message), 0);
   EXPECT_EQ(strcmp((char *)r.id, (char *) ret->id), 0);
 
-  uint8_t res = ~(retChecksum + ret->checkSum);
-  EXPECT_FALSE(res);
+
+  EXPECT_FALSE(ret->isCheckSumOk);
 
 
   free(ret->message);

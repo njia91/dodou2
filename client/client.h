@@ -26,7 +26,7 @@ static const size_t MAX_SIZE = 1024;
 typedef struct {
   char *username;
   bool contactNS;
-  uint8_t ipAdress[4];
+  uint8_t *ipAdress;
   char *port;
 } clientData;
 

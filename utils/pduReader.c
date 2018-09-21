@@ -15,14 +15,14 @@
 
 
 void *getDataFromSocket(int socket_fd) {
-  void *pdu = NULL;
+  genericPdu *pdu = NULL;
 
-  uint8_t opCode
+  uint8_t opCode = UINT8_MAX;
 
   int ret = facade_readFromSocket(socket_fd, &opCode, 1);
 
   if (ret == 0){
-    fprintf("Could not read data from Socket.\n")
+    fprintf(stderr, "Could not read data from Socket\n.");
     return NULL;
   }
 
@@ -36,6 +36,9 @@ void *getDataFromSocket(int socket_fd) {
     pdu = pduReader_join(socket_fd);
   }  else if (opCode == PJOIN) {
     pdu = pduReader_pJoin(socket_fd);
+  } else if (opCode == GETLIST){
+    pdu = calloc(1, sizeof(GETLIST));
+    pdu->opCode = GETLIST;
   }
 
 
@@ -239,6 +242,7 @@ pduMess *pduReader_mess(int socket_fd){
   pduMess *p = calloc(sizeof(pduMess), 1);
   uint8_t buffer[WORD_SIZE];
   int offset = 0;
+  uint8_t givenCheckSum;
 
   p->opCode = MESS;
 
@@ -251,7 +255,9 @@ pduMess *pduReader_mess(int socket_fd){
 
 
   memcpy(&p->idSize, buffer + BYTE_SIZE, sizeof(uint8_t));
-  memcpy(&p->checkSum, buffer + 2 * BYTE_SIZE, sizeof(uint8_t));
+  memcpy(&givenCheckSum, buffer + 2 * BYTE_SIZE, sizeof(uint8_t));
+
+
 
   facade_readFromSocket(socket_fd, buffer, WORD_SIZE);
 
@@ -291,6 +297,19 @@ pduMess *pduReader_mess(int socket_fd){
   }
   p->id[p->idSize] = '\0';
 
+  uint8_t calculatedChecksum = calculateCheckSum((void*) &p->opCode, 1);
+  calculatedChecksum += calculateCheckSum((void*) &p->idSize, 1);
+  calculatedChecksum += calculateCheckSum((void*) &p->messageSize, 2);
+  calculatedChecksum += calculateCheckSum((void*) &p->timeStamp, 4);
+  calculatedChecksum += calculateCheckSum((void *) p->message,  p->messageSize);
+  calculatedChecksum += calculateCheckSum((void *) p->id, p->idSize);
+
+  if(~(calculatedChecksum + givenCheckSum) == false){
+    p->isCheckSumOk = true;
+  } else {
+    p->isCheckSumOk = false;
+  }
+
   return p;
 }
 
@@ -312,8 +331,8 @@ void deletePdu(genericPdu *pdu){
     }
     free(pParticipants);
   } else if (opCode == PJOIN || opCode == PLEAVE){
-    pduPJoin *pJoin = (pduJoin *) pdu;
-    free(pJoin.id);
+    pduPJoin *pJoin = (pduPJoin *) pdu;
+    free(pJoin->id);
     free(pJoin);
   } else if (opCode == QUIT || opCode == GETLIST){
     free(pdu);

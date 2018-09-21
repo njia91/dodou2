@@ -7,14 +7,18 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/epoll.h>
 #include <sys/time.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
 #include <errno.h>
 #include <memory.h>
+#include <unistd.h>
 
 // Use as reference: https://www.ibm.com/support/knowledgecenter/en/ssw_i5_54/rzab6/xnonblock.htm
 
@@ -36,7 +40,7 @@ int facade_createSocket(struct addrinfo **res);
 
 int facade_bindSocket(int socket_fd, struct addrinfo **res);
 
-int facade_connectToServer(int socket_fd, struct addrinfo **res);
+int facade_connect(int socket_fd, struct addrinfo **res);
 
 int facade_acceptConnections(int socket_fd, void (*fPtr)());
 
@@ -50,9 +54,9 @@ int facade_epoll_wait(int epfd, struct epoll_event *events, int maxEvents, int t
 
 int facade_epoll_ctl(int epfd, int op, int fd, struct epoll_event *event);
 
-int facade_writeToSocket(int socket_fd, uint8_t *packet, int size);
+ssize_t facade_writeToSocket(int socket_fd, uint8_t *packet, int size);
 
-int facade_readFromSocket(int socket_fd, uint8_t *buffer, int size);
+ssize_t facade_readFromSocket(int socket_fd, uint8_t *buffer, int size);
 
 #endif //DODOU2_TCP_SOCKET_H
 

@@ -35,7 +35,7 @@ int facade_bindSocket(int socket_fd, struct addrinfo **res){
   return 0;
 }
 
-int facade_connectToServer(int socket_fd, struct addrinfo **res){
+int facade_connect(int socket_fd, struct addrinfo **res){
   return connect(socket_fd, (*res)->ai_addr, (*res)->ai_addrlen);
 }
 
@@ -65,23 +65,23 @@ int facade_setToNonBlocking(int socket_fd){
   return 0;
 }
 
-int tcp_acceptConnections(int socket_fd, void (*fPtr)()){
-  return accept(socket_fd, NULL, NULL);
+int facade_accept(int socket_fd) {
+  return accept(socket_fd, 0, 0);
 }
 
 int facade_epoll_wait(int epfd, struct epoll_event *events, int maxEvents, int timeout){
-  return 0;
+  return epoll_wait(epfd, events, maxEvents, timeout);
 }
 
 int facade_epoll_ctl(int epfd, int op, int fd, struct epoll_event *event){
-  return 0;
+  return epoll_ctl(epfd, op, fd, event);
 }
 
-int facade_writeToSocket(int socket_fd, uint8_t *packet, int size){
-  return 0;
+ssize_t facade_writeToSocket(int socket_fd, uint8_t *packet, int size){
+  return write(socket_fd, packet, size);
 }
 
-int facade_readFromSocket(int socket_fd, uint8_t *buffer, int size){
-  return 0;
+ssize_t facade_readFromSocket(int socket_fd, uint8_t *buffer, int size){
+  return read(socket_fd, buffer, size);
 }
 

@@ -2,7 +2,7 @@
 
 
 //Server-nameserver interaction
-uint8_t *pduCreator_req(pduReq *req){
+uint8_t *pduCreator_req(pduReq *req, size_t *nByte) {
 
   if(req->opCode != REQ){
     fprintf(stderr, "Invalid Operation Code.\n");
@@ -11,6 +11,7 @@ uint8_t *pduCreator_req(pduReq *req){
 
   int packetSize =  WORD_SIZE + req->serverNameSize;
   int noOfWords = calculateNoOfWords(packetSize);
+  *nByte = noOfWords * WORD_SIZE;
   uint16_t u16;
 
   uint8_t *pduBuffer = calloc(sizeof(uint8_t), noOfWords * WORD_SIZE);
@@ -24,12 +25,14 @@ uint8_t *pduCreator_req(pduReq *req){
   return pduBuffer;
 } 
 
-uint8_t *pduCreator_alive(pduAlive *alive){
+uint8_t *pduCreator_alive(pduAlive *alive, size_t *nByte) {
 
   if(alive->opCode != ALIVE){
     fprintf(stderr, "Invalid Operation Code.\n");
     return NULL;
   }
+
+  *nByte = WORD_SIZE;
 
   uint8_t *pduBuffer = calloc(sizeof(uint8_t), WORD_SIZE);
   uint16_t u16;
@@ -43,15 +46,16 @@ uint8_t *pduCreator_alive(pduAlive *alive){
 }
 
 //Client-nameserver interaction
-uint8_t *pduCreator_getList(){
+uint8_t *pduCreator_getList(size_t *nByte) {
   uint8_t *pduBuffer = calloc(sizeof(uint8_t), WORD_SIZE);
+  *nByte = WORD_SIZE;
   pduBuffer[0] = GETLIST;
   return pduBuffer;
 }
 
 
 //Client-server interaction
-uint8_t *pduCreator_join(pduJoin *join, int *bufferSize){
+uint8_t *pduCreator_join(pduJoin *join, size_t *nByte){
 
   if(join->opCode != JOIN){
     fprintf(stderr, "Invalid Operation Code.\n");
@@ -60,6 +64,7 @@ uint8_t *pduCreator_join(pduJoin *join, int *bufferSize){
 
   int packetSize = WORD_SIZE + join->idSize;
   int noOfWords = calculateNoOfWords(packetSize);
+  *nByte = noOfWords * WORD_SIZE;
   uint8_t *pduBuffer = calloc(sizeof(uint8_t), noOfWords * WORD_SIZE);
 
   memcpy(pduBuffer, &(join->opCode), sizeof(uint8_t));
@@ -69,7 +74,7 @@ uint8_t *pduCreator_join(pduJoin *join, int *bufferSize){
   return pduBuffer;
 }
 
-uint8_t *pduCreator_pJoin(pduPJoin *pJoin, int *bufferSize){
+uint8_t *pduCreator_pJoin(pduPJoin *pJoin, size_t *nByte){
 
   if(!(pJoin->opCode == PJOIN || pJoin->opCode == PLEAVE)){
     fprintf(stderr, "Invalid Operation Code.\n");
@@ -77,8 +82,8 @@ uint8_t *pduCreator_pJoin(pduPJoin *pJoin, int *bufferSize){
   }
 
   int packetSize = (2 * WORD_SIZE) + pJoin->idSize;
-  *bufferSize = packetSize;
   int noOfWords = calculateNoOfWords(packetSize);
+  *nByte = noOfWords * WORD_SIZE;
   uint32_t u32 = htonl(pJoin->timeStamp);
   uint8_t *pduBuffer = calloc(sizeof(uint8_t), noOfWords * WORD_SIZE);
 
@@ -91,7 +96,7 @@ uint8_t *pduCreator_pJoin(pduPJoin *pJoin, int *bufferSize){
 }
 
 
-uint8_t *pduCreator_participants(pduParticipants *par){
+uint8_t *pduCreator_participants(pduParticipants *par, size_t *nByte) {
 
   if(par->opCode != PARTICIPANTS){
     fprintf(stderr, "Invalid Operation Code.\n");
@@ -105,6 +110,7 @@ uint8_t *pduCreator_participants(pduParticipants *par){
 
   int packetSize = (2 * WORD_SIZE) + dataSize;
   int noOfWords = calculateNoOfWords(packetSize);
+  *nByte = noOfWords * WORD_SIZE;
 
   dataSize = htons(dataSize);
   uint16_t strLen = 0;
@@ -125,17 +131,18 @@ uint8_t *pduCreator_participants(pduParticipants *par){
   return pduBuffer;
 }
 
-uint8_t *pduCreator_pLeave(pduPLeave *pLeave, int *bufferSize){
-  return pduCreator_pJoin(pLeave, bufferSize);
+uint8_t *pduCreator_pLeave(pduPLeave *pLeave, size_t *nByte){
+  return pduCreator_pJoin(pLeave, nByte);
 }
 
-uint8_t *pduCreator_quit(){
+uint8_t *pduCreator_quit(size_t *nByte) {
   uint8_t *pduBuffer = calloc(sizeof(uint8_t), WORD_SIZE);
+  *nByte = WORD_SIZE;
   pduBuffer[0] = QUIT;
   return pduBuffer;
 }
 
-uint8_t *pduCreator_mess(pduMess *mess){
+uint8_t *pduCreator_mess(pduMess *mess, size_t *nByte) {
 
    if(mess->opCode != MESS){
     fprintf(stderr, "Invalid Operation Code.\n");
@@ -147,6 +154,8 @@ uint8_t *pduCreator_mess(pduMess *mess){
   int noOfWordsForMess = calculateNoOfWords(mess->messageSize);
   int noOfWordsForId = calculateNoOfWords(mess->idSize);
   noOfWords += noOfWordsForId + noOfWordsForMess;
+
+  *nByte = noOfWords * WORD_SIZE;
 
   uint8_t *pduBuffer = calloc(noOfWords * WORD_SIZE, sizeof(uint8_t));
   uint16_t u16 = htons(mess->messageSize);

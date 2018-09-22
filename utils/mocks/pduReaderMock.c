@@ -54,6 +54,7 @@ void deletePdu(genericPdu *pdu){
     for(int i = 0; i < pParticipants->noOfIds; i++){
       free(pParticipants->ids[i]);
     }
+    free(pParticipants->ids);
     free(pParticipants);
   } else if (opCode == PJOIN || opCode == PLEAVE){
     pduPJoin *pJoin = (pduPJoin *) pdu;

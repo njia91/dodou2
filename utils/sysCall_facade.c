@@ -57,12 +57,10 @@ int facade_setsocketopt(int socket_fd, int lvl, int opt){
 }
 
 int facade_setToNonBlocking(int socket_fd){
-  int on = 1;
-  if (ioctl(socket_fd, FIONBIO, (char *)&on) == -1){
-    fprintf(stderr, "%s\n", strerror(errno));
-    return -1;
-  }
-  return 0;
+  // Mark socket as non-blocking
+  int flags = fcntl(socket_fd, F_GETFL, 0);
+  flags |= O_NONBLOCK;
+  return fcntl(socket_fd, F_SETFL, flags);
 }
 
 int facade_accept(int socket_fd) {

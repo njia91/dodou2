@@ -65,7 +65,7 @@ pduParticipants *createParticipantsPdu(){
   p = (pduParticipants *) calloc(1, sizeof(pduParticipants));
   p->opCode = PARTICIPANTS;
   p->noOfIds = 3;
-  p->ids = calloc(sizeof(serverInfo), p->noOfIds);
+  p->ids = calloc(p->noOfIds, sizeof(uint8_t *));
 
   const char * clientNames[] = {"Michaels Server",
                                 "Anderssons Server",
@@ -91,13 +91,15 @@ void clientTest_connectToServer(void **state)
   fp = freopen("../testSupport/connectToNs.txt", "r", stdin);
 
   int fd = 545;
+  will_return_always(facade_setToNonBlocking, 0);
   will_return_always(facade_createSocket, fd);
   will_return_always(facade_connect, 0);
   expect_value(facade_connect, socket_fd, fd);
   expect_value(facade_connect, socket_fd, fd);
 
 
-  will_return_always(facade_writeToSocket, 1);
+  //will_return(facade_writeToSocket, WORD_SIZE);
+  //will_return(facade_writeToSocket, 2 * WORD_SIZE);
  // will_return(facade_readFromSocket, SLIST);
   //will_return(facade_readFromSocket, 1);
   //will_return(facade_readFromSocket, PARTICIPANTS);
@@ -119,19 +121,6 @@ void clientTest_connectToServer(void **state)
   char *argv[5] = {"client", "Micke :)", "ns", "123.0.0.1", "1234"};
   client_main(5, argv);
 
-  // Free Slist
-  for (int i = 0; i < pSList->noOfServers; i++){
-    free(pSList->sInfo[i].serverName);
-  }
-  free(pSList->sInfo);
-  free(pSList);
-
-  // Free Participants
-  for(int i = 0; i < pParticipants->noOfIds; i++){
-    free(pParticipants->ids[i]);
-  }
-  free(pParticipants->ids);
-  free(pParticipants);
   fclose(fp);
 }
 
@@ -140,10 +129,9 @@ void clientTest_recieveAndSendDatafromServer(){
   fp = freopen("../testSupport/dataSentFromServer.txt", "r", stdin);
   IS_MOCKOBJECT_SET = true;
 
-//  readerInfo *rInfo = (readerInfo *)calloc(1, sizeof(readerInfo));
   readerInfo rInfo;
 
-  will_return(facade_epoll_wait, 1);
+  //will_return(facade_epoll_wait, 1);
 
   rInfo.epoll_fd = 1;
   rInfo.packetList = NULL;
@@ -169,10 +157,26 @@ void clientTest_recieveAndSendDatafromServer(){
   pJoin->id = calloc(pJoin->idSize, sizeof(uint8_t) + 1);
   memcpy(pJoin->id, id, pJoin->idSize + 1);
 
+
   will_return(getDataFromSocket, pJoin);
   will_return(getDataFromSocket, mess1);
   will_return(getDataFromSocket, NULL);
-  will_return_always(facade_epoll_wait, 1);
+
+  // pJoin
+  will_return(facade_epoll_wait, 23);
+  will_return(facade_epoll_wait, 1);
+
+  //Stdin
+  will_return(facade_epoll_wait, STDIN_FILENO);
+  will_return(facade_epoll_wait, 1);
+
+  //Mess
+  will_return(facade_epoll_wait, 23);
+  will_return(facade_epoll_wait, 1);
+
+  //Dummy values
+  will_return(facade_epoll_wait, 55);
+  will_return(facade_epoll_wait, 1);
 
   waitForIncomingMessages((void *) &(rInfo));
 
@@ -185,10 +189,15 @@ int main(int argc, char* argv[]) {
           cmocka_unit_test(clientTest_connectToServer),
           cmocka_unit_test(clientTest_recieveAndSendDatafromServer),
           };*/
+/*  const struct CMUnitTest tests[] = {
+          cmocka_unit_test(clientTest_recieveAndSendDatafromServer),
+  };*/
+
 
   const struct CMUnitTest tests[] = {
-          cmocka_unit_test(clientTest_recieveAndSendDatafromServer),
+          cmocka_unit_test(clientTest_connectToServer),
   };
+
   return cmocka_run_group_tests(tests, NULL, NULL);
   return 0;
 }

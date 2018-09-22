@@ -11,24 +11,24 @@
 #include "pduCommon.h"
 
 //Server-nameserver interaction
-uint8_t *pduCreator_req(pduReq *req);
+uint8_t *pduCreator_req(pduReq *req, size_t *nByte);
 
-uint8_t *pduCreator_alive(pduAlive *alive);
+uint8_t *pduCreator_alive(pduAlive *alive, size_t *nByte);
 
 //Client-nameserver interaction
-uint8_t *pduCreator_getList();
+uint8_t *pduCreator_getList(size_t *nByte);
 
 //Client-server interaction
-uint8_t *pduCreator_join(pduJoin *join, int *bufferSize);
+uint8_t *pduCreator_join(pduJoin *join, size_t *nByte);
 
-uint8_t *pduCreator_pJoin(pduPJoin *pjoin, int *bufferSize);
+uint8_t *pduCreator_pJoin(pduPJoin *pjoin, size_t *nByte);
 
-uint8_t *pduCreator_pLeave(pduPLeave *pLeave, int *bufferSize);
+uint8_t *pduCreator_pLeave(pduPLeave *pLeave, size_t *nByte);
 
-uint8_t *pduCreator_participants(pduParticipants *par);
+uint8_t *pduCreator_participants(pduParticipants *par, size_t *nByte);
 
-uint8_t *pduCreator_quit();
+uint8_t *pduCreator_quit(size_t *nByte);
 
-uint8_t *pduCreator_mess(pduMess *mess);
+uint8_t *pduCreator_mess(pduMess *mess, size_t *nByte);
 
 #endif

@@ -15,7 +15,7 @@ void parseArgs(int argc, char **argv, clientData *args) {
   }
   args->username = argv[1];
   args->contactNS = strcmp("ns", argv[2]) ? false : true;
-  args->ipAdress = argv[3];
+  args->ipAdress = (uint8_t *) argv[3];
   //memcpy(args->ipAdress, argv[3], sizeof(uint32_t));
   args->port = calloc(sizeof(uint8_t), PORT_LENGTH);
   memcpy(args->port, argv[4], PORT_LENGTH - 1);
@@ -59,9 +59,10 @@ int establishConnectionWithNs(clientData *cData){
 }
 
 pduSList *getServerList(int nameServer_fd){
-  uint8_t *getList = pduCreator_getList();
+  size_t bufferSize;
+  uint8_t *getList = pduCreator_getList(&bufferSize);
 
-  ssize_t ret = facade_writeToSocket(nameServer_fd, getList, WORD_SIZE);
+  ssize_t ret = facade_writeToSocket(nameServer_fd, getList, bufferSize);
 
   free(getList);
 
@@ -75,6 +76,7 @@ pduSList *getServerList(int nameServer_fd){
   }
 
   genericPdu *pdu = getDataFromSocket(nameServer_fd);
+
 
   if (pdu->opCode != SLIST){
     fprintf(stderr, "Invalid packet received from Name Server.\n"
@@ -126,6 +128,7 @@ int getServerChoiceFromUser(pduSList *pSList, clientData *cData){
     if (buffer[0] - '0' <= pSList->noOfServers + 1 && buffer[0] -'0' >= 0){
       userInput = buffer[0] - '0';
       if (userInput){
+        cData->ipAdress = calloc(1, sizeof(uint32_t));
         memcpy(cData->ipAdress, pSList->sInfo[userInput - 1].ipAdress, sizeof(uint32_t));
         cData->port = calloc(sizeof(uint8_t), PORT_LENGTH);
         sprintf(cData->port, "%d", pSList->sInfo[userInput - 1].port);
@@ -136,7 +139,6 @@ int getServerChoiceFromUser(pduSList *pSList, clientData *cData){
     free(buffer);
   }while(userInput == -1);
   fprintf(stdout, "\n-----------------------------------------------------------------\n\n");
-
 
   return userInput;
 }
@@ -155,7 +157,7 @@ int client_main(int argc, char **argv){
       exit(EXIT_FAILURE);
     }
     int ret = getServerChoiceFromUser(pSList, &cData);
-    deletePdu(pSList);
+    deletePdu((genericPdu *)pSList);
 
     if (ret == 0){
       exit(EXIT_SUCCESS);
@@ -170,6 +172,7 @@ int client_main(int argc, char **argv){
 
   startChatSession(&cData);
   free(cData.port);
+  free(cData.ipAdress);
   return 0;
 
 }

@@ -35,7 +35,7 @@ int joinChatSession(int server_fd, clientData *cData);
 
 int printServerParticipants(int server_fd, clientData *cData);
 
-void readInputFromUser();
+bool readInputFromUser(int socket_fd);
 
 
 #endif //DODOU2_CLIENTSESSION_H

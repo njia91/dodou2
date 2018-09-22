@@ -19,6 +19,7 @@
 #include <errno.h>
 #include <memory.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 // Use as reference: https://www.ibm.com/support/knowledgecenter/en/ssw_i5_54/rzab6/xnonblock.htm
 

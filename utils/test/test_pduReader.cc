@@ -60,7 +60,7 @@ TEST_F(PduReaderTest, read_reqPacket){
   r.serverName = (uint8_t *)serName;
   r.serverNameSize = serLen;
 
-  uint8_t *retVal = pduCreator_req(&r);
+  uint8_t *retVal = pduCreator_req(&r, 0);
   globalBuffer = retVal + 1;
 
   pduReq *ret = pduReader_req(4);
@@ -285,7 +285,7 @@ TEST_F(PduReaderTest, read_participants){
   r.noOfIds = 2;
   r.ids = (uint8_t **)ids;
 
-  uint8_t *retVal = pduCreator_participants(&r);
+  uint8_t *retVal = pduCreator_participants(&r, NULL);
   globalBuffer = retVal + 1;
   pduParticipants *ret = pduReader_participants(4);
 
@@ -327,7 +327,7 @@ TEST_F(PduReaderTest, read_mess){
   checksum += calculateCheckSum((void *)r.id, r.idSize);
   checksum = ~checksum;
 
-  uint8_t *retVal = pduCreator_mess(&r);
+  uint8_t *retVal = pduCreator_mess(&r, NULL);
   globalBuffer = retVal + 1;
   pduMess *ret = pduReader_mess(4);
 

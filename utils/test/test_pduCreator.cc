@@ -27,13 +27,14 @@ TEST(PduCreatorTest, creatingReqPacket){
   pduReq r;
   char *serName = (char *)"testHost";
   uint8_t serLen = strlen(serName);
+  size_t bufferSize;
 
   r.opCode = REQ;
   r.tcpPort = 454;
   r.serverName = (uint8_t *)serName;
   r.serverNameSize = serLen;
 
-  uint8_t *retVal = pduCreator_req(&r);
+  uint8_t *retVal = pduCreator_req(&r, &bufferSize);
 
   uint8_t retOpCode;
   uint16_t retTcpPort;
@@ -57,25 +58,27 @@ TEST(PduCreatorTest, creatingReqPacket){
 
 TEST(PduCreatorTest, creatingReqPacketWithInvalidOpCode){
   pduReq r;
+  size_t bufferSize;
 
   r.opCode = ACK;
   r.tcpPort = 454;
   r.serverName = (uint8_t *)"testHost";
   r.serverNameSize = strlen((char *)r.serverName);
 
-  uint8_t *retVal = pduCreator_req(&r);
+  uint8_t *retVal = pduCreator_req(&r, &bufferSize);
 
   EXPECT_TRUE(retVal == NULL);
 }
 
 TEST(PduCreatorTest, creatingAlivePdu){
   pduAlive a;
+  size_t bufferSize;
 
   a.opCode = ALIVE;
   a.noOfClients = 5;
   a.id = 23;
 
-  uint8_t *retVal = pduCreator_alive(&a);
+  uint8_t *retVal = pduCreator_alive(&a, &bufferSize);
 
   uint8_t retOpCode;
   uint8_t retNoOfClients;
@@ -96,7 +99,7 @@ TEST(PduCreatorTest, creatingAlivePdu){
 TEST(PduCreatorTest, creatingJoinPdu){
   pduJoin j;
   char *id = (char *)"MICKEÅÄÖ";
-  int bufferSize;
+  size_t bufferSize;
 
   j.opCode = JOIN;
   j.idSize = strlen(id);
@@ -123,7 +126,7 @@ TEST(PduCreatorTest, creatingJoinPdu){
 TEST(PduCreatorTest, creatingPJoinPdu){
   pduPJoin pj;
   char *id = (char *)"MICKEÅÄÖ";
-  int bufferSize;
+  size_t bufferSize;
 
   pj.opCode = PJOIN;
   pj.idSize = strlen(id);
@@ -156,6 +159,7 @@ TEST(PduCreatorTest, creatingPJoinPdu){
 TEST(PduCreatorTest, creatingParticipantsPdu){
   pduParticipants p;
   char *str[3];
+  size_t bufferSize;
 
   str[0] = (char *)"MICKE";
   str[1] = (char *)"JONAS";
@@ -166,7 +170,7 @@ TEST(PduCreatorTest, creatingParticipantsPdu){
   p.noOfIds = 3;
   p.ids = (uint8_t **)str;
 
-  uint8_t *retVal = pduCreator_participants(&p);
+  uint8_t *retVal = pduCreator_participants(&p, &bufferSize);
 
   uint8_t retOpCode;
   uint8_t retNoOfIds;
@@ -214,7 +218,7 @@ TEST(PduCreatorTest, creatingParticipantsPdu){
 TEST(PduCreatorTest, creatingPLeavePdu){
   pduPJoin p;
   char *id = (char *)"MICKEÅÄÖ";
-  int bufferSize;
+  size_t bufferSize;
   p.opCode = PLEAVE;
   p.idSize = strlen(id);
   p.timeStamp = (uint32_t)time(NULL);
@@ -247,6 +251,7 @@ TEST(PduCreatorTest, creatingMessPduServerSide){
   pduMess p;
   char *id = (char *)"MICKE1233";
   char *mess = (char *)"Fösta meddelande...23";
+  size_t bufferSize;
 
   p.opCode = MESS;
   p.idSize = strlen(id);
@@ -255,7 +260,7 @@ TEST(PduCreatorTest, creatingMessPduServerSide){
   p.messageSize = (uint8_t)strlen(mess);
   p.message = (uint8_t *)mess;
 
-  uint8_t *retVal = pduCreator_mess(&p);
+  uint8_t *retVal = pduCreator_mess(&p, &bufferSize);
 
   uint8_t retOpCode;
   uint8_t retIdSize;
@@ -303,7 +308,7 @@ TEST(PduCreatorTest, creatingMessPduServerSide){
 TEST(PduCreatorTest, creatingMessPduClientSide){
   pduMess p;
   char *mess = (char *)"Fösta meddelande...23";
-
+  size_t bufferSize;
   p.opCode = MESS;
   p.idSize = 0;
   p.timeStamp = 0;
@@ -311,7 +316,7 @@ TEST(PduCreatorTest, creatingMessPduClientSide){
   p.messageSize = (uint8_t)strlen(mess);
   p.message = (uint8_t *)mess;
 
-  uint8_t *retVal = pduCreator_mess(&p);
+  uint8_t *retVal = pduCreator_mess(&p, &bufferSize);
 
   uint8_t retOpCode;
   uint8_t retIdSize;

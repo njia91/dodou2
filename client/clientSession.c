@@ -22,9 +22,9 @@ genericPdu *getPduFromSocket(int socket_fd){
 
 bool processSocketData(int socket_fd, void *args){
   bool allOk = true;
-  readerInfo *rInfo = (readerInfo *)args;
+  clientData *cData = (clientData *)args;
 
-  if (socket_fd == rInfo->commonEventFd) {
+  if (socket_fd == cData->commonEventFd) {
     fprintf(stderr, "Terminate RECEIVED FROM PARTNER THREAD \n");
     eventfd_t value = 0;
 
@@ -39,10 +39,10 @@ bool processSocketData(int socket_fd, void *args){
     }
 
   } else if (socket_fd == STDIN_FILENO){
-    allOk = readInputFromUser(socket_fd);
+    allOk = readInputFromUser(cData);
     if (!allOk){
       eventfd_t e = TERMINATE;
-      write(rInfo->commonEventFd, &e, sizeof(eventfd_t));
+      write(cData->commonEventFd, &e, sizeof(eventfd_t));
     }
 
   } else {
@@ -68,7 +68,7 @@ bool processSocketData(int socket_fd, void *args){
   return allOk;
 }
 
-bool readInputFromUser(int socket_fd) {
+bool readInputFromUser(clientData *cData) {
   size_t buffSize = 0;
   char *buffer = NULL;
   bool active = true;
@@ -86,7 +86,7 @@ bool readInputFromUser(int socket_fd) {
     if (!(strcmp(buffer, "quit\n") && strcmp(buffer, "QUIT\n"))){
       active = false;
       uint8_t *buffer = pduCreator_quit(&buffSize);
-      ret = facade_write(socket_fd, buffer, buffSize);
+      ret = facade_write(cData, buffer, buffSize);
       printf("QUIT QUIT QUIT \n");
       if (ret != buffSize){
         fprintf(stderr, "Unable to write all data to socket.\n");
@@ -95,25 +95,25 @@ bool readInputFromUser(int socket_fd) {
       printf("\nTJOO HEEEJ1111 \n");
       pduMess mess;
       size_t size = 0;
-      char str[] = "Michael";
+      //char str[] = "Michael";
       mess.opCode = MESS;
-      mess.id = str;
-      mess.idSize = strlen(str);
+      mess.id = NULL;
+      mess.idSize =  0;
       mess.message = buffer;
-      mess.messageSize = buffSize;
-      time( (time_t *)&mess.timeStamp);
-
+      mess.messageSize = strlen(buffer);
+      mess.timeStamp = 0;
 
       uint8_t *packet = pduCreator_mess(&mess, &size);
-      printf(" THE OP CODE %u \n", packet[0]);
-      printf("PACKET TO SEND %s\n", (char *)packet);
-      printf("SOCKET OT SENDD %d\n", socket_fd);
 
-      ret = facade_write(socket_fd, packet, size);
-      if (ret != buffSize){
-        fprintf(stderr, "Unable to write all data to socket. Size %zd \n", size);
+      for (int i = 0; i < size; i++){
+        printf("%d - ", packet[i]);
       }
-      printf("\nTJOO HEEEJ 22222\n");
+      printf("\n");
+      ret = facade_write(cData->server_fd, packet, size);
+      if (ret != size){
+        fprintf(stderr, "Unable to write all data to socket. Size %zd  ret %zd\n", size, ret);
+        printf("Errno : %s \n",strerror(errno));
+      }
     }
 
   }
@@ -178,11 +178,11 @@ int setupConnectionToServer(const uint8_t *ip, const char *port) {
   return socket_fd;
 }
 
-int joinChatSession(int server_fd, clientData *cData){
+int joinChatSession(int server_fd, inputArgs *inArgs){
   pduJoin p;
   p.opCode = JOIN;
-  p.id = (uint8_t *)cData->username;
-  p.idSize = strlen(cData->username);
+  p.id = (uint8_t *)inArgs->username;
+  p.idSize = strlen(inArgs->username);
   size_t bufferSize = 0;
   uint8_t *buffer = pduCreator_join(&p, &bufferSize);
 
@@ -197,7 +197,7 @@ int joinChatSession(int server_fd, clientData *cData){
   return 0;
 }
 
-int printServerParticipants(int server_fd, clientData *cData){
+int printServerParticipants(int server_fd, inputArgs *inArgs){
   genericPdu *pdu = getDataFromSocket(server_fd);
 
   if (pdu == NULL){
@@ -228,23 +228,23 @@ int printServerParticipants(int server_fd, clientData *cData){
   return 0;
 }
 
-void startChatSession(clientData *cData){
+void startChatSession(inputArgs *inArgs){
   // Connect to server
   pthread_t receivingThread;
   int event_fd;
   int epoll_fd;
 
-  int server_fd = setupConnectionToServer(cData->ipAdress, cData->port);
+  int server_fd = setupConnectionToServer(inArgs->ipAdress, inArgs->port);
 
   // Listen on server socket and join.
-  int ret = joinChatSession(server_fd, cData);
+  int ret = joinChatSession(server_fd, inArgs);
 
   if (ret == -1){
     fprintf(stderr," Failed to send JOIN PDU to server: %s \n", strerror(errno));
     exit(EXIT_FAILURE);
   }
 
-  ret = printServerParticipants(server_fd, cData);
+  ret = printServerParticipants(server_fd, inArgs);
 
   epoll_fd = epoll_create1(0);
 
@@ -276,11 +276,17 @@ void startChatSession(clientData *cData){
   //facade_setToNonBlocking(STDIN_FILENO);
   facade_setToNonBlocking(server_fd);
 
+  clientData cData;
+  cData.commonEventFd = event_fd;
+  cData.server_fd = server_fd;
+  cData.username = inArgs->username;
+
+
   readerInfo rInfo;
-  rInfo.commonEventFd = event_fd;
+  rInfo.args = &cData;
   rInfo.epoll_fd = epoll_fd;
   rInfo.func = processSocketData;
-  rInfo.packetList = NULL;
+
 
   fflush(stdin);
 

@@ -17,14 +17,17 @@
 void *getDataFromSocket(int socket_fd) {
   genericPdu *pdu = NULL;
 
-  uint8_t opCode = UINT8_MAX;
+  uint8_t opCode = 999;
 
-  int ret = facade_read(socket_fd, &opCode, 1);
+  ssize_t ret = facade_read(socket_fd, &opCode, 1);
+
+  printf("WE GOT THIS OP CODE BACK %u   Size %zd\n", opCode, ret);
 
   if (ret == 0){
     fprintf(stderr, "Could not read data from Socket\n.");
     return NULL;
   }
+
 
   if(opCode == SLIST){
     pdu = (genericPdu *) pduReader_SList(socket_fd);
@@ -41,6 +44,8 @@ void *getDataFromSocket(int socket_fd) {
     pdu->opCode = GETLIST;
   } else if (opCode == PARTICIPANTS){
     pdu = (genericPdu *) pduReader_participants(socket_fd);
+  } else if (opCode == MESS){
+    pdu = (genericPdu *) pduReader_mess(socket_fd);
   }
 
 
@@ -305,7 +310,7 @@ pduMess *pduReader_mess(int socket_fd){
   calculatedChecksum += calculateCheckSum((void *) p->message,  p->messageSize);
   calculatedChecksum += calculateCheckSum((void *) p->id, p->idSize);
 
-  if(~(calculatedChecksum + givenCheckSum) == false){
+  if(~(calculatedChecksum + givenCheckSum) == 0){
     p->isCheckSumOk = true;
   } else {
     p->isCheckSumOk = false;

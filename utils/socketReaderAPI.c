@@ -35,7 +35,7 @@ void *waitForIncomingMessages(void *threadData){
         closeAndRemoveFD(rInfo->epoll_fd, events[i].data.fd);
       } else if ((events[i].events & EPOLLIN) ){
         fprintf(stdout, "EPOOLIN EVENT \n");
-        isSessionActive = rInfo->func(events[i].data.fd, (void *) rInfo);
+        isSessionActive = rInfo->func(events[i].data.fd, (void *) rInfo->args);
         if (isSessionActive){
           printf("REARM THE SOCKET FD !!! \n");
           ev.data.fd = events[i].data.fd;

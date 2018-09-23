@@ -8,7 +8,7 @@
 #include <unitypes.h>
 
 
-void parseArgs(int argc, char **argv, clientData *args) {
+void parseArgs(int argc, char **argv, inputArgs *args) {
   if (argc <= 4) {
     fprintf(stderr, "Too few or too many Arguments \n"
                     "[Username] [ns|cs] [remote IP Adress] [remote Port]\n");
@@ -23,7 +23,7 @@ void parseArgs(int argc, char **argv, clientData *args) {
 
 }
 
-int establishConnectionWithNs(clientData *cData){
+int establishConnectionWithNs(inputArgs *cData){
   int nameserver_fd = 0;
   struct addrinfo* res=0;
 
@@ -89,11 +89,11 @@ pduSList *getServerList(int nameServer_fd){
   return (pduSList *) pdu;
 }
 
-int getServerChoiceFromUser(pduSList *pSList, clientData *cData){
+int getServerChoiceFromUser(pduSList *pSList, inputArgs *inArgs){
   int userInput = 0;
 
   // Frees old port string used to connect to NS
-  free(cData->port);
+  free(inArgs->port);
 
   if (pSList->noOfServers == 0){
     fprintf(stderr, "No available or active chat servers on this name-server. Terminating program \n");
@@ -131,14 +131,14 @@ int getServerChoiceFromUser(pduSList *pSList, clientData *cData){
     if (buffer[0] - '0' <= pSList->noOfServers && buffer[0] -'0' >= 0){
       userInput = buffer[0] - '0';
       if (userInput){
-        cData->ipAdress = calloc(1, 16);
+        inArgs->ipAdress = calloc(1, 16);
         // Convert DOT style IP address.
-        sprintf((char *) cData->ipAdress, "%u.%u.%u.%u", pSList->sInfo[userInput - 1].ipAdress[0],
+        sprintf((char *) inArgs->ipAdress, "%u.%u.%u.%u", pSList->sInfo[userInput - 1].ipAdress[0],
                                                          pSList->sInfo[userInput - 1].ipAdress[1],
                                                          pSList->sInfo[userInput - 1].ipAdress[2],
                                                          pSList->sInfo[userInput - 1].ipAdress[3]);
-        cData->port = calloc(sizeof(uint8_t), PORT_LENGTH);
-        sprintf(cData->port, "%d", pSList->sInfo[userInput - 1].port);
+        inArgs->port = calloc(sizeof(uint8_t), PORT_LENGTH);
+        sprintf(inArgs->port, "%d", pSList->sInfo[userInput - 1].port);
       }
     } else {
         fprintf(stdout, "Invalid choice. Please select a server in the list.\n");
@@ -151,7 +151,7 @@ int getServerChoiceFromUser(pduSList *pSList, clientData *cData){
 }
 
 int client_main(int argc, char **argv){
-  clientData cData;
+  inputArgs cData;
 
   parseArgs(argc, argv, &cData);
 

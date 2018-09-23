@@ -25,10 +25,7 @@ typedef bool processEvent(int, void *);
 
 typedef struct {
   int epoll_fd;
-  int commonEventFd;
-  dll *packetList;
-  pthread_cond_t incomingPacket;
-  pthread_mutex_t packetList_mutex;
+  void *args;
   processEvent *func;
 } readerInfo;
 

@@ -29,15 +29,15 @@ void handleQuitPdu(pduQuit *quit);
 
 void handleMessPdu(pduMess *mess);
 
-void startChatSession(clientData *cData);
+void startChatSession(inputArgs *inArgs);
 
 int setupConnectionToServer(const uint8_t *ip, const char *port);
 
-int joinChatSession(int server_fd, clientData *cData);
+int joinChatSession(int server_fd, inputArgs *inArgs);
 
-int printServerParticipants(int server_fd, clientData *cData);
+int printServerParticipants(int server_fd, inputArgs *inArgs);
 
-bool readInputFromUser(int socket_fd);
+bool readInputFromUser(clientData *cData);
 
 
 #endif //DODOU2_CLIENTSESSION_H

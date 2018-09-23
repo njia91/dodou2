@@ -28,15 +28,21 @@ typedef struct {
   bool contactNS;
   uint8_t *ipAdress;
   char *port;
+} inputArgs;
+
+typedef struct {
+    char *username;
+    int server_fd;
+    int commonEventFd;
 } clientData;
 
-void parseArgs(int argc, char **argv, clientData *args);
+void parseArgs(int argc, char **argv, inputArgs *args);
 
-int establishConnectionWithNs(clientData *cData);
+int establishConnectionWithNs(inputArgs *cData);
 
 pduSList *getServerList(int nameServer_fd);
 
-int getServerChoiceFromUser(pduSList *pSList, clientData *cData);
+int getServerChoiceFromUser(pduSList *pSList, inputArgs *inArgs);
 
 int client_main(int argc, char **argv);
 

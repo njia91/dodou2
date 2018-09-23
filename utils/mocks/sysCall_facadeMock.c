@@ -56,6 +56,7 @@ int facade_setToNonBlocking(int socket_fd){
 
 int facade_epoll_wait(int epfd, struct epoll_event *events, int maxEvents, int timeout){
   if(IS_MOCKOBJECT_SET){
+    events[0].events = EPOLLIN;
     events[0].data.fd = (int)mock();
     return (int)mock();
   }
@@ -66,11 +67,11 @@ int facade_epoll_ctl(int epfd, int op, int fd, struct epoll_event *event){
   return 0;
 }
 
-ssize_t facade_writeToSocket(int socket_fd, uint8_t *packet, int size) {
+ssize_t facade_write(int socket_fd, void *packet, size_t size) {
   return size;
 }
 
-ssize_t facade_readFromSocket(int socket_fd, uint8_t *buffer, int size) {
-  *buffer = (uint8_t)mock();
+ssize_t facade_read(int socket_fd, void *buffer, size_t size) {
+  memcpy(buffer, (void *)mock(), size);
   return size;
 }

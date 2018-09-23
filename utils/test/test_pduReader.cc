@@ -29,9 +29,9 @@ extern "C"{
 int globalOffset;
 uint8_t *globalBuffer;
 
-ssize_t facade_writeToSocket(int socket_fd, uint8_t *packet, int size);
+ssize_t facade_write(int socket_fd, void *packet, size_t size);
 
-ssize_t facade_readFromSocket(int socket_fd, uint8_t *buffer, int size){
+ssize_t facade_read(int socket_fd, void *buffer, size_t size){
   memcpy(buffer, globalBuffer + globalOffset, size);
   globalOffset += size;
   return size;

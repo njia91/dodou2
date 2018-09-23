@@ -55,9 +55,9 @@ int facade_epoll_wait(int epfd, struct epoll_event *events, int maxEvents, int t
 
 int facade_epoll_ctl(int epfd, int op, int fd, struct epoll_event *event);
 
-ssize_t facade_writeToSocket(int socket_fd, uint8_t *packet, int size);
+ssize_t facade_write(int socket_fd, void *packet, size_t size);
 
-ssize_t facade_readFromSocket(int socket_fd, uint8_t *buffer, int size);
+ssize_t facade_read(int socket_fd, void *buffer, size_t size);
 
 #endif //DODOU2_TCP_SOCKET_H
 

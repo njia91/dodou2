@@ -98,14 +98,6 @@ void clientTest_connectToServer(void **state)
   expect_value(facade_connect, socket_fd, fd);
 
 
-  //will_return(facade_writeToSocket, WORD_SIZE);
-  //will_return(facade_writeToSocket, 2 * WORD_SIZE);
- // will_return(facade_readFromSocket, SLIST);
-  //will_return(facade_readFromSocket, 1);
-  //will_return(facade_readFromSocket, PARTICIPANTS);
-  //will_return(facade_readFromSocket, 1);
-
-
   pSList = createSListPdu();
   pParticipants = createParticipantsPdu();
 
@@ -136,7 +128,7 @@ void clientTest_recieveAndSendDatafromServer(){
   rInfo.epoll_fd = 1;
   rInfo.packetList = NULL;
   rInfo.func = processSocketData;
-
+  rInfo.commonEventFd = 99;
 
   char id[] = "Michael Åäö";
   char mess[] = "First mess ";
@@ -160,9 +152,13 @@ void clientTest_recieveAndSendDatafromServer(){
 
   will_return(getDataFromSocket, pJoin);
   will_return(getDataFromSocket, mess1);
-  will_return(getDataFromSocket, NULL);
+  //will_return(getDataFromSocket, NULL);
 
   // pJoin
+  will_return(facade_epoll_wait, 23);
+  will_return(facade_epoll_wait, 1);
+
+  //Mess
   will_return(facade_epoll_wait, 23);
   will_return(facade_epoll_wait, 1);
 
@@ -170,13 +166,12 @@ void clientTest_recieveAndSendDatafromServer(){
   will_return(facade_epoll_wait, STDIN_FILENO);
   will_return(facade_epoll_wait, 1);
 
-  //Mess
-  will_return(facade_epoll_wait, 23);
+  //Dummy values
+  will_return(facade_epoll_wait, rInfo.commonEventFd);
   will_return(facade_epoll_wait, 1);
 
-  //Dummy values
-  will_return(facade_epoll_wait, 55);
-  will_return(facade_epoll_wait, 1);
+
+  will_return(facade_read, &TERMINATE);
 
   waitForIncomingMessages((void *) &(rInfo));
 
@@ -189,14 +184,14 @@ int main(int argc, char* argv[]) {
           cmocka_unit_test(clientTest_connectToServer),
           cmocka_unit_test(clientTest_recieveAndSendDatafromServer),
           };*/
-/*  const struct CMUnitTest tests[] = {
-          cmocka_unit_test(clientTest_recieveAndSendDatafromServer),
-  };*/
-
-
   const struct CMUnitTest tests[] = {
-          cmocka_unit_test(clientTest_connectToServer),
+          cmocka_unit_test(clientTest_recieveAndSendDatafromServer),
   };
+
+
+/*  const struct CMUnitTest tests[] = {
+          cmocka_unit_test(clientTest_connectToServer),
+  };*/
 
   return cmocka_run_group_tests(tests, NULL, NULL);
   return 0;

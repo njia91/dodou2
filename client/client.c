@@ -62,7 +62,7 @@ pduSList *getServerList(int nameServer_fd){
   size_t bufferSize;
   uint8_t *getList = pduCreator_getList(&bufferSize);
 
-  ssize_t ret = facade_writeToSocket(nameServer_fd, getList, bufferSize);
+  ssize_t ret = facade_write(nameServer_fd, getList, bufferSize);
 
   free(getList);
 
@@ -169,7 +169,6 @@ int client_main(int argc, char **argv){
          cData.ipAdress[1], cData.ipAdress[2], cData.ipAdress[3], cData.port);
 
   // Start Session
-
   startChatSession(&cData);
   free(cData.port);
   free(cData.ipAdress);

@@ -22,7 +22,24 @@ genericPdu *getPduFromSocket(int socket_fd){
 
 bool processSocketData(int socket_fd, void *args){
   bool allOk = true;
-  if (socket_fd == STDIN_FILENO){
+  readerInfo *rInfo = (readerInfo *)args;
+
+  if (socket_fd == rInfo->commonEventFd) {
+    fprintf(stderr, "Terminate RECEIVED FROM PARTNER THREAD \n");
+    eventfd_t value = 0;
+
+    if (facade_read(socket_fd, &value, sizeof(eventfd_t))){
+      if (value == TERMINATE){
+
+        allOk = false;
+      }
+    } else {
+      fprintf(stderr, "Enable to read from eventfd_Read()");
+      allOk = false;
+      // TODO Also set allOk to false?
+    }
+
+  } else if (socket_fd == STDIN_FILENO){
     allOk = readInputFromUser(socket_fd);
 
   } else {
@@ -102,8 +119,6 @@ int setupConnectionToServer(const uint8_t *ip, const char *port) {
     exit(EXIT_FAILURE);
   }
 
-  facade_setToNonBlocking(socket_fd);
-
   facade_freeaddrinfo(res);
   return socket_fd;
 }
@@ -116,9 +131,12 @@ int joinChatSession(int server_fd, clientData *cData){
   size_t bufferSize = 0;
   uint8_t *buffer = pduCreator_join(&p, &bufferSize);
 
-  ssize_t ret = facade_writeToSocket(server_fd, buffer, bufferSize);
+  ssize_t ret = facade_write(server_fd, buffer, bufferSize);
   if (ret == -1){
+    fprintf(stderr, "Could not write data to socket \n");
     return -1;
+  } else if (ret != bufferSize){
+    fprintf(stderr, "Could not write all data to socket \n");
   }
   free(buffer);
   return 0;
@@ -129,6 +147,8 @@ int printServerParticipants(int server_fd, clientData *cData){
 
   if (pdu == NULL){
     fprintf(stderr, "Unable to read data from socket: %s\n", strerror(errno));
+    close(server_fd);
+    exit(EXIT_FAILURE);
   }
 
   if (pdu->opCode != PARTICIPANTS){
@@ -163,9 +183,19 @@ bool readInputFromUser(int socket_fd) {
 
   } else {
     fprintf(stderr, "STDIN DATA %s  SIZE OF %zd buffsize %zd\n",buffer, sizeof(buffer), buffSize);
-    ret = facade_writeToSocket(socket_fd, (uint8_t *) buffer, buffSize);
+
+    if (!(strcmp(buffer, "quit") && strcmp(buffer, "QUIT"))){
+      size_t bufferSize = 0;
+      uint8_t *buffer = pduCreator_quit(&bufferSize);
+      ret = facade_write(socket_fd, buffer, bufferSize);
+      if (ret != bufferSize){
+        fprintf(stderr, "Unable to write all data to socket.\n");
+      }
+    }
+
+    ret = facade_write(socket_fd, (uint8_t *) buffer, buffSize);
     if (ret != buffSize){
-      fprintf(stderr, "Did not read all data to socket.\n");
+      fprintf(stderr, "Unable to write all data to socket.\n");
     }
   }
 
@@ -177,6 +207,7 @@ void startChatSession(clientData *cData){
   // Connect to server
   pthread_t receivingThread;
   struct epoll_event ev;
+  int event_fd;
   int epoll_fd;
 
   int server_fd = setupConnectionToServer(cData->ipAdress, cData->port);
@@ -200,15 +231,23 @@ void startChatSession(clientData *cData){
 
   // Setup Epoll
   ev.data.fd = server_fd;
-  ev.events = EPOLLIN | EPOLLONESHOT | EPOLLEXCLUSIVE;
+  ev.events = EPOLLIN | EPOLLONESHOT | EPOLLEXCLUSIVE | EPOLLRDHUP;
   facade_epoll_ctl(epoll_fd, EPOLL_CTL_ADD,server_fd, &ev);
 
   // Add stdin
   ev.data.fd = STDIN_FILENO;
   facade_epoll_ctl(epoll_fd, EPOLL_CTL_ADD, STDIN_FILENO, &ev);
+
+  // Add inter-thread communication FD.
+  event_fd = eventfd(0, O_NONBLOCK);
+  ev.data.fd = event_fd;
+  facade_epoll_ctl(epoll_fd, EPOLL_CTL_ADD, event_fd, &ev);
+
   facade_setToNonBlocking(STDIN_FILENO);
+  facade_setToNonBlocking(server_fd);
 
   readerInfo rInfo;
+  rInfo.commonEventFd = event_fd;
   rInfo.epoll_fd = epoll_fd;
   rInfo.func = processSocketData;
   rInfo.packetList = NULL;
@@ -224,5 +263,5 @@ void startChatSession(clientData *cData){
 
   pthread_join(receivingThread, NULL);
   close(epoll_fd);
-  close(server_fd);
+  //close(server_fd);
 }

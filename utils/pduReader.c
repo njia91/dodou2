@@ -19,7 +19,7 @@ void *getDataFromSocket(int socket_fd) {
 
   uint8_t opCode = UINT8_MAX;
 
-  int ret = facade_readFromSocket(socket_fd, &opCode, 1);
+  int ret = facade_read(socket_fd, &opCode, 1);
 
   if (ret == 0){
     fprintf(stderr, "Could not read data from Socket\n.");
@@ -51,7 +51,7 @@ pduReq *pduReader_req(int socket_fd){
   uint8_t buffer[WORD_SIZE];
   p->opCode = REQ;
   int offset = 0;
-  facade_readFromSocket(socket_fd, buffer, 3 * BYTE_SIZE);
+  facade_read(socket_fd, buffer, 3 * BYTE_SIZE);
 
   memcpy(&p->serverNameSize, buffer, sizeof(uint8_t));
   memcpy(&p->tcpPort, buffer + BYTE_SIZE, sizeof(uint16_t));
@@ -59,7 +59,7 @@ pduReq *pduReader_req(int socket_fd){
   p->serverName = calloc(sizeof(uint8_t), p->serverNameSize + 1);
 
   for (int i = 0; i < calculateNoOfWords(p->serverNameSize); i++){
-    facade_readFromSocket(socket_fd, buffer, WORD_SIZE);
+    facade_read(socket_fd, buffer, WORD_SIZE);
     // The null-terminator indicates end of of message.
     for (int k = 0; buffer[k] != '\0' && k < WORD_SIZE; k++){
       p->serverName[offset] = buffer[k];
@@ -77,7 +77,7 @@ pduAck *pduReader_ack(int socket_fd){
   p->opCode = ACK;
   uint8_t buffer[WORD_SIZE];
 
-  facade_readFromSocket(socket_fd, buffer, 3 * BYTE_SIZE);
+  facade_read(socket_fd, buffer, 3 * BYTE_SIZE);
 
   if (buffer[0] != 0){
     fprintf(stderr, "Invalid padding for ACK Packet %d\n", buffer[0]);
@@ -97,7 +97,7 @@ pduSList *pduReader_SList(int socket_fd){
   uint8_t buffer[WORD_SIZE];
   p->opCode = SLIST;
   int offset = 0;
-  facade_readFromSocket(socket_fd, buffer, 3 * BYTE_SIZE);
+  facade_read(socket_fd, buffer, 3 * BYTE_SIZE);
 
   if (buffer[0] != 0){
     fprintf(stderr, "Invalid padding for SLIST Packet %d\n", buffer[0]);
@@ -110,10 +110,10 @@ pduSList *pduReader_SList(int socket_fd){
   p->sInfo = calloc(sizeof(serverInfo), p->noOfServers);
 
   for (int i = 0; i < p->noOfServers; i++){
-    facade_readFromSocket(socket_fd, buffer, WORD_SIZE);
+    facade_read(socket_fd, buffer, WORD_SIZE);
     memcpy(&p->sInfo[i].ipAdress, buffer, sizeof(uint32_t));
 
-    facade_readFromSocket(socket_fd, buffer, WORD_SIZE);
+    facade_read(socket_fd, buffer, WORD_SIZE);
     memcpy(&p->sInfo[i].port, buffer, sizeof(uint16_t));
     p->sInfo[i].port = ntohs(p->sInfo[i].port);
     memcpy(&p->sInfo[i].noOfClients, buffer + (2 * BYTE_SIZE), sizeof(uint8_t));
@@ -123,7 +123,7 @@ pduSList *pduReader_SList(int socket_fd){
 
     offset = 0;
     for (int j = 0; j < calculateNoOfWords(p->sInfo[i].serverNameLen); j++){
-      facade_readFromSocket(socket_fd, buffer, WORD_SIZE);
+      facade_read(socket_fd, buffer, WORD_SIZE);
       // The null-terminator indicates end of of message.
       for (int k = 0; buffer[k] != '\0' && k < WORD_SIZE; k++){
         p->sInfo[i].serverName[offset] = buffer[k];
@@ -143,7 +143,7 @@ pduJoin *pduReader_join(int socket_fd){
   uint8_t buffer[WORD_SIZE];
   int offset = 0;
 
-  facade_readFromSocket(socket_fd, buffer, 3 * BYTE_SIZE);
+  facade_read(socket_fd, buffer, 3 * BYTE_SIZE);
   p->idSize = buffer[0];
 
   if (buffer[1] != 0 || buffer[2] != 0 ){
@@ -153,7 +153,7 @@ pduJoin *pduReader_join(int socket_fd){
 
   p->id = calloc(sizeof(uint8_t), p->idSize + 1);
   for (int i = 0; i < calculateNoOfWords(p->idSize); i++){
-    facade_readFromSocket(socket_fd, buffer, WORD_SIZE);
+    facade_read(socket_fd, buffer, WORD_SIZE);
     // The null-terminator indicates end of of message.
     for (int k = 0; buffer[k] != '\0' && k < WORD_SIZE; k++){
       p->id[offset] = buffer[k];
@@ -171,7 +171,7 @@ pduPJoin *pduReader_pJoin(int socket_fd){
 
   p->opCode = PJOIN;
 
-  facade_readFromSocket(socket_fd, buffer, 3 * BYTE_SIZE);
+  facade_read(socket_fd, buffer, 3 * BYTE_SIZE);
 
   memcpy(&p->idSize, buffer , sizeof(uint8_t));
 
@@ -180,13 +180,13 @@ pduPJoin *pduReader_pJoin(int socket_fd){
     return NULL;
   }
 
-  facade_readFromSocket(socket_fd, buffer, WORD_SIZE);
+  facade_read(socket_fd, buffer, WORD_SIZE);
 
   memcpy(&p->timeStamp, buffer, sizeof(uint32_t));
   p->timeStamp = ntohl(p->timeStamp);
   p->id = calloc(sizeof(uint8_t), p->idSize + 1);
   for (int i = 0; i < calculateNoOfWords(p->idSize); i++){
-    facade_readFromSocket(socket_fd, buffer, WORD_SIZE);
+    facade_read(socket_fd, buffer, WORD_SIZE);
     // The null-terminator indicates end of of message.
     for (int k = 0; buffer[k] != '\0' && k < WORD_SIZE; k++){
       p->id[offset] = buffer[k];
@@ -211,7 +211,7 @@ pduParticipants *pduReader_participants(int socket_fd){
 
   p->opCode = PARTICIPANTS;
 
-  facade_readFromSocket(socket_fd, buffer, 3 * BYTE_SIZE);
+  facade_read(socket_fd, buffer, 3 * BYTE_SIZE);
 
   memcpy(&p->noOfIds, buffer , sizeof(uint8_t));
   memcpy(&dataSize, buffer + BYTE_SIZE, sizeof(uint16_t));
@@ -220,7 +220,7 @@ pduParticipants *pduReader_participants(int socket_fd){
 
   int idNo = 0;
   while(idNo < p->noOfIds){
-    facade_readFromSocket(socket_fd, buffer, WORD_SIZE);
+    facade_read(socket_fd, buffer, WORD_SIZE);
     // The null-terminator indicates end of of an ID.
     for (int k = 0;k < WORD_SIZE && idNo < p->noOfIds; k++){
       idBuffer[offset] = buffer[k];
@@ -246,7 +246,7 @@ pduMess *pduReader_mess(int socket_fd){
 
   p->opCode = MESS;
 
-  facade_readFromSocket(socket_fd, buffer, 3 * BYTE_SIZE);
+  facade_read(socket_fd, buffer, 3 * BYTE_SIZE);
 
   if (buffer[0] != 0){
     fprintf(stderr, "Invalid padding for JOIN Packet %d\n", buffer[0]);
@@ -258,8 +258,7 @@ pduMess *pduReader_mess(int socket_fd){
   memcpy(&givenCheckSum, buffer + 2 * BYTE_SIZE, sizeof(uint8_t));
 
 
-
-  facade_readFromSocket(socket_fd, buffer, WORD_SIZE);
+  facade_read(socket_fd, buffer, WORD_SIZE);
 
   memcpy(&p->messageSize, buffer , sizeof(uint16_t));
   p->messageSize = htons(p->messageSize);
@@ -269,14 +268,14 @@ pduMess *pduReader_mess(int socket_fd){
     return NULL;
   }
 
-  facade_readFromSocket(socket_fd, buffer, WORD_SIZE);
+  facade_read(socket_fd, buffer, WORD_SIZE);
 
   memcpy(&p->timeStamp, buffer, sizeof(uint32_t));
   p->timeStamp = htonl(p->timeStamp);
 
   p->message = calloc(sizeof(uint8_t), p->messageSize + 1);
   for (int i = 0; i < calculateNoOfWords(p->messageSize); i++){
-    facade_readFromSocket(socket_fd, buffer, WORD_SIZE);
+    facade_read(socket_fd, buffer, WORD_SIZE);
     // The null-terminator indicates end of of message.
     for (int k = 0; buffer[k] != '\0' && k < WORD_SIZE; k++){
       p->message[offset] = buffer[k];
@@ -288,7 +287,7 @@ pduMess *pduReader_mess(int socket_fd){
 
   p->id = calloc(sizeof(uint8_t), p->idSize + 1);
   for (int i = 0; i < calculateNoOfWords(p->idSize); i++){
-    facade_readFromSocket(socket_fd, buffer, WORD_SIZE);
+    facade_read(socket_fd, buffer, WORD_SIZE);
     // The null-terminator indicates end of of message.
     for (int k = 0; buffer[k] != '\0' && k < WORD_SIZE; k++){
       p->id[offset] = buffer[k];

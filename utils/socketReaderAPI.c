@@ -19,25 +19,34 @@ void *waitForIncomingMessages(void *threadData){
     availFds = facade_epoll_wait(rInfo->epoll_fd, events, MAX_EVENTS, -1);
     if (availFds == -1) {
       perror("epoll_wait: ");
-      break;
+      isSessionActive = false;
     } else if (availFds == 0) { // Probably interrupted with a signal.
-      break;
+      isSessionActive = false;
     }
 
     for (int i = 0; i < availFds; ++i) {
       // read data from available FD;
-      isSessionActive = rInfo->func(events[i].data.fd, (void *) rInfo);
-      if (isSessionActive){
-        ev.data.fd = events[i].data.fd;
-        ev.events = EPOLLIN | EPOLLONESHOT | EPOLLEXCLUSIVE;
-        facade_epoll_ctl(rInfo->epoll_fd, EPOLL_CTL_ADD, events[i].data.fd, &ev);
-      }
-      else {
-        break;
+      if ((events[i].events & EPOLLRDHUP) || (events[i].events & EPOLLERR)){
+        closeAndRemoveFD(rInfo->epoll_fd, events[i].data.fd);
+      } else {
+        isSessionActive = rInfo->func(events[i].data.fd, (void *) rInfo);
+        if (isSessionActive){
+          ev.data.fd = events[i].data.fd;
+          ev.events = EPOLLIN | EPOLLONESHOT | EPOLLEXCLUSIVE | EPOLLRDHUP;
+          facade_epoll_ctl(rInfo->epoll_fd, EPOLL_CTL_ADD, events[i].data.fd, &ev);
+        } else {
+          closeAndRemoveFD(rInfo->epoll_fd, events[i].data.fd);
+          break;
+        }
       }
     }
   }
   printf("AVSLUTA SLUT PÅ FUNCTION!!! \n");
   return 0;
-  //pthread_exit(NULL);
+}
+
+void closeAndRemoveFD(int epoll_fd, int toBeRemovedFd){
+  epoll_ctl(epoll_fd, EPOLL_CTL_DEL, toBeRemovedFd, NULL);
+  shutdown(toBeRemovedFd, SHUT_RDWR);
+  close(toBeRemovedFd);
 }

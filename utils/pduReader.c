@@ -27,18 +27,20 @@ void *getDataFromSocket(int socket_fd) {
   }
 
   if(opCode == SLIST){
-    pdu = pduReader_SList(socket_fd);
+    pdu = (genericPdu *) pduReader_SList(socket_fd);
   } else if (opCode == REQ){
-    pdu = pduReader_req(socket_fd);
+    pdu = (genericPdu *) pduReader_req(socket_fd);
   } else if (opCode == ACK){
-    pdu = pduReader_ack(socket_fd);
+    pdu = (genericPdu *) pduReader_ack(socket_fd);
   }  else if (opCode == JOIN){
-    pdu = pduReader_join(socket_fd);
+    pdu = (genericPdu *) pduReader_join(socket_fd);
   }  else if (opCode == PJOIN) {
-    pdu = pduReader_pJoin(socket_fd);
+    pdu = (genericPdu *) pduReader_pJoin(socket_fd);
   } else if (opCode == GETLIST){
     pdu = calloc(1, sizeof(GETLIST));
     pdu->opCode = GETLIST;
+  } else if (opCode == PARTICIPANTS){
+    pdu = (genericPdu *) pduReader_participants(socket_fd);
   }
 
 

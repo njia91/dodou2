@@ -13,6 +13,8 @@
 #include <pthread.h>
 #include <sys/epoll.h>
 #include "socketReaderAPI.h"
+#include "pduCreator.h"
+#include "pduReader.h"
 #include <time.h>
 
 genericPdu *getPduFromSocket(int socket_fd);

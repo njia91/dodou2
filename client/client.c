@@ -5,12 +5,13 @@
 #include "client.h"
 #include "clientSession.h"
 #include <stdio.h>
+#include <unitypes.h>
 
 
 void parseArgs(int argc, char **argv, clientData *args) {
   if (argc <= 4) {
     fprintf(stderr, "Too few or too many Arguments \n"
-                    "[Username] [localPort] [remote IP Adress] [remote Port]\n");
+                    "[Username] [ns|cs] [remote IP Adress] [remote Port]\n");
     exit(EXIT_FAILURE);
   }
   args->username = argv[1];
@@ -110,8 +111,7 @@ int getServerChoiceFromUser(pduSList *pSList, clientData *cData){
       fprintf(stdout, "Number of active users \t: %d\n", pSList->sInfo[i].noOfClients);
       fprintf(stdout, "IP adress of server \t: ");
       for(int j = 0; j < 4; j++){
-        fprintf(stdout, "%d ", pSList->sInfo[i].ipAdress[j]);
-
+        fprintf(stdout, "%u. ", pSList->sInfo[i].ipAdress[j]);
       }
       fprintf(stdout, "\n");
 
@@ -121,15 +121,22 @@ int getServerChoiceFromUser(pduSList *pSList, clientData *cData){
     fprintf(stdout, "Select a server between 1 and %d. Zero to exit:  ", pSList->noOfServers);
     char *buffer = NULL;
     size_t size = 0;
-    if(getline(&buffer, &size, stdin) == -1){
-      fprintf(stderr, "%s\n", strerror(errno));
-      return -1;
+    fflush(stdin);
+    ssize_t ret  = getline(&buffer, &size, stdin);
+    if (ret == -1){
+      fprintf(stderr, "%s: %s \n",__func__,strerror(errno));
+      return 0;
     }
-    if (buffer[0] - '0' <= pSList->noOfServers + 1 && buffer[0] -'0' >= 0){
+
+    if (buffer[0] - '0' <= pSList->noOfServers && buffer[0] -'0' >= 0){
       userInput = buffer[0] - '0';
       if (userInput){
-        cData->ipAdress = calloc(1, sizeof(uint32_t));
-        memcpy(cData->ipAdress, pSList->sInfo[userInput - 1].ipAdress, sizeof(uint32_t));
+        cData->ipAdress = calloc(1, 16);
+        // Convert DOT style IP address.
+        sprintf((char *) cData->ipAdress, "%u.%u.%u.%u", pSList->sInfo[userInput - 1].ipAdress[0],
+                                                         pSList->sInfo[userInput - 1].ipAdress[1],
+                                                         pSList->sInfo[userInput - 1].ipAdress[2],
+                                                         pSList->sInfo[userInput - 1].ipAdress[3]);
         cData->port = calloc(sizeof(uint8_t), PORT_LENGTH);
         sprintf(cData->port, "%d", pSList->sInfo[userInput - 1].port);
       }

@@ -10,7 +10,7 @@ int facade_getAddrinfo(const char *name,
                        const char *service,
                        const struct addrinfo *req,
                        struct addrinfo **pai){
-  getaddrinfo(name, service, req, pai);
+  return getaddrinfo(name, service, req, pai);
 }
 
 void facade_freeaddrinfo(struct addrinfo *addr){

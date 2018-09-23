@@ -67,6 +67,7 @@ uint8_t *pduCreator_join(pduJoin *join, size_t *nByte){
   *nByte = noOfWords * WORD_SIZE;
   uint8_t *pduBuffer = calloc(sizeof(uint8_t), noOfWords * WORD_SIZE);
 
+
   memcpy(pduBuffer, &(join->opCode), sizeof(uint8_t));
   memcpy(pduBuffer + BYTE_SIZE , &(join->idSize), sizeof(uint8_t));
   memcpy(pduBuffer + WORD_SIZE , join->id, join->idSize);

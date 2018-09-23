@@ -37,6 +37,7 @@ void *waitForIncomingMessages(void *threadData);
 
 void closeAndRemoveFD(int epoll_fd, int toBeRemovedFd);
 
+void clearStdin();
 
 
 #endif //DODOU2_SOCKETREADERAPI_H

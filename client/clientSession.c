@@ -30,7 +30,6 @@ bool processSocketData(int socket_fd, void *args){
 
     if (facade_read(socket_fd, &value, sizeof(eventfd_t))){
       if (value == TERMINATE){
-
         allOk = false;
       }
     } else {
@@ -41,10 +40,14 @@ bool processSocketData(int socket_fd, void *args){
 
   } else if (socket_fd == STDIN_FILENO){
     allOk = readInputFromUser(socket_fd);
+    if (!allOk){
+      eventfd_t e = TERMINATE;
+      write(rInfo->commonEventFd, &e, sizeof(eventfd_t));
+    }
 
   } else {
+    printf("\nHandle Message from Server \n");
     genericPdu *p = getPduFromSocket(socket_fd);
-
     if (p == NULL){
       return false;
     }
@@ -58,13 +61,64 @@ bool processSocketData(int socket_fd, void *args){
       handleMessPdu((pduMess *) p);
     }
 
-    printf("End of processSocketData... \n");
-    // Do logic with the data from socket.
-
     deletePdu(p);
   }
 
+  printf("\n End of processSocketData... \n");
   return allOk;
+}
+
+bool readInputFromUser(int socket_fd) {
+  size_t buffSize = 0;
+  char *buffer = NULL;
+  bool active = true;
+  ssize_t ret = 0;
+  fflush(stdin);
+  fprintf(stdout, "Reading input from user...  ! \n");
+  if (getline(&buffer, &buffSize, stdin) == -1){
+    fprintf(stderr, "Failed to read data from user: %s\n", strerror(errno));
+    active = false;
+
+  } else {
+    fprintf(stdout, "STDIN DATA %s  SIZE OF %zd buffsize %zd\n",buffer, sizeof(buffer), buffSize);
+
+
+    if (!(strcmp(buffer, "quit\n") && strcmp(buffer, "QUIT\n"))){
+      active = false;
+      uint8_t *buffer = pduCreator_quit(&buffSize);
+      ret = facade_write(socket_fd, buffer, buffSize);
+      printf("QUIT QUIT QUIT \n");
+      if (ret != buffSize){
+        fprintf(stderr, "Unable to write all data to socket.\n");
+      }
+    } else {
+      printf("\nTJOO HEEEJ1111 \n");
+      pduMess mess;
+      size_t size = 0;
+      char str[] = "Michael";
+      mess.opCode = MESS;
+      mess.id = str;
+      mess.idSize = strlen(str);
+      mess.message = buffer;
+      mess.messageSize = buffSize;
+      time( (time_t *)&mess.timeStamp);
+
+
+      uint8_t *packet = pduCreator_mess(&mess, &size);
+      printf(" THE OP CODE %u \n", packet[0]);
+      printf("PACKET TO SEND %s\n", (char *)packet);
+      printf("SOCKET OT SENDD %d\n", socket_fd);
+
+      ret = facade_write(socket_fd, packet, size);
+      if (ret != buffSize){
+        fprintf(stderr, "Unable to write all data to socket. Size %zd \n", size);
+      }
+      printf("\nTJOO HEEEJ 22222\n");
+    }
+
+  }
+  free(buffer);
+  return active;
 }
 
 void notifyUserOfChatRoomChanges(pduPJoin *pJoin){
@@ -91,14 +145,15 @@ int setupConnectionToServer(const uint8_t *ip, const char *port) {
   struct addrinfo *rp = NULL;
   struct addrinfo hints;
   memset(&hints,0,sizeof(hints));
-  hints.ai_family=AF_UNSPEC;
+  hints.ai_family=AF_INET;
   hints.ai_socktype=SOCK_STREAM;
   hints.ai_protocol=0;
   hints.ai_flags=AI_ADDRCONFIG;
 
   int ret = facade_getAddrinfo((char *) ip, port, &hints, &res);
+
   if (ret){
-    fprintf(stderr, "setupConnectionToSever(): Something wrong with getAddrInfo \n");
+    fprintf(stderr, "setupConnectionToSever(): %s \n", gai_strerror(ret));
     exit(EXIT_FAILURE);
   }
 
@@ -162,51 +217,20 @@ int printServerParticipants(int server_fd, clientData *cData){
   pduParticipants *p = (pduParticipants *) pdu;
 
   fprintf(stdout, "-----------------------------------------------------------------\n");
+  fprintf(stdout, "Welcome! \n");
   fprintf(stdout, "Online users: \n");
 
   for (int i = 0; i < p->noOfIds; i++){
-    fprintf(stdout, "%s\n", p->ids[i]);
+    fprintf(stdout, "\t%s\n", p->ids[i]);
   }
+  fprintf(stdout, "-----------------------------------------------------------------\n");
   deletePdu(pdu);
   return 0;
-}
-
-bool readInputFromUser(int socket_fd) {
-  size_t buffSize = 0;
-  char *buffer = NULL;
-  bool active = true;
-  ssize_t ret = 0;
-
-  if (getline(&buffer, &buffSize, stdin) == -1){
-    fprintf(stderr, "Failed to read data from user: %s\n", strerror(errno));
-    active = false;
-
-  } else {
-    fprintf(stderr, "STDIN DATA %s  SIZE OF %zd buffsize %zd\n",buffer, sizeof(buffer), buffSize);
-
-    if (!(strcmp(buffer, "quit") && strcmp(buffer, "QUIT"))){
-      size_t bufferSize = 0;
-      uint8_t *buffer = pduCreator_quit(&bufferSize);
-      ret = facade_write(socket_fd, buffer, bufferSize);
-      if (ret != bufferSize){
-        fprintf(stderr, "Unable to write all data to socket.\n");
-      }
-    }
-
-    ret = facade_write(socket_fd, (uint8_t *) buffer, buffSize);
-    if (ret != buffSize){
-      fprintf(stderr, "Unable to write all data to socket.\n");
-    }
-  }
-
-  free(buffer);
-  return active;
 }
 
 void startChatSession(clientData *cData){
   // Connect to server
   pthread_t receivingThread;
-  struct epoll_event ev;
   int event_fd;
   int epoll_fd;
 
@@ -230,20 +254,26 @@ void startChatSession(clientData *cData){
   }
 
   // Setup Epoll
-  ev.data.fd = server_fd;
-  ev.events = EPOLLIN | EPOLLONESHOT | EPOLLEXCLUSIVE | EPOLLRDHUP;
-  facade_epoll_ctl(epoll_fd, EPOLL_CTL_ADD,server_fd, &ev);
+  struct epoll_event ev_server;
+  ev_server.data.fd = server_fd;
+  ev_server.events = EPOLLIN | EPOLLONESHOT;
+  facade_epoll_ctl(epoll_fd, EPOLL_CTL_ADD, server_fd, &ev_server);
 
   // Add stdin
-  ev.data.fd = STDIN_FILENO;
-  facade_epoll_ctl(epoll_fd, EPOLL_CTL_ADD, STDIN_FILENO, &ev);
+  struct epoll_event ev_stdin;
+  ev_stdin.data.fd = STDIN_FILENO;
+  ev_stdin.events = EPOLLIN | EPOLLONESHOT;
+  facade_epoll_ctl(epoll_fd, EPOLL_CTL_ADD, STDIN_FILENO, &ev_stdin);
 
   // Add inter-thread communication FD.
   event_fd = eventfd(0, O_NONBLOCK);
-  ev.data.fd = event_fd;
-  facade_epoll_ctl(epoll_fd, EPOLL_CTL_ADD, event_fd, &ev);
+  struct epoll_event ev_ITC;
+  ev_ITC.data.fd = event_fd;
+  ev_ITC.events = EPOLLIN | EPOLLONESHOT;
+  facade_epoll_ctl(epoll_fd, EPOLL_CTL_ADD, event_fd, &ev_ITC);
+  printf(" EVENT FD %d \n", event_fd);
 
-  facade_setToNonBlocking(STDIN_FILENO);
+  //facade_setToNonBlocking(STDIN_FILENO);
   facade_setToNonBlocking(server_fd);
 
   readerInfo rInfo;
@@ -252,6 +282,8 @@ void startChatSession(clientData *cData){
   rInfo.func = processSocketData;
   rInfo.packetList = NULL;
 
+  fflush(stdin);
+
   // Start chat session
   ret = pthread_create(&receivingThread, NULL, waitForIncomingMessages, (void *)&rInfo);
   if (ret){
@@ -259,9 +291,10 @@ void startChatSession(clientData *cData){
   }
 
   //readInputFromUser(server_fd);
-  waitForIncomingMessages((void *)&rInfo);
+  //waitForIncomingMessages((void *)&rInfo);
 
   pthread_join(receivingThread, NULL);
+  fprintf(stdout, "EXIT !!! \n");
   close(epoll_fd);
   //close(server_fd);
 }

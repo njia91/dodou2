@@ -1,16 +1,15 @@
 #include <bits/types/struct_tm.h>
 #include "pduCommon.h"
 
-uint8_t calculateCheckSum(void *p, int size){
-  char *pdu = (char *)p;
-  uint8_t ch = 0;;
+uint8_t calculateCheckSum(void *p, size_t size) {
+  uint8_t ch = 0;
   for(int i = 0; i < size; i++){
-    ch += pdu[i];
+    ch += *(uint8_t *)p++;
   }
   return ch;
 }
 
-int calculateNoOfWords(int packetSize){
+size_t calculateNoOfWords(size_t packetSize){
   if (packetSize % WORD_SIZE == 0){
     return (packetSize / 4);
   } else {

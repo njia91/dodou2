@@ -105,9 +105,9 @@ typedef pduQuit pduGetList;
 //typedef void *genericPdu;
 
 
-uint8_t calculateCheckSum(void *p, int size);
+uint8_t calculateCheckSum(void *p, size_t size);
 
-int calculateNoOfWords(int packetSize);
+size_t calculateNoOfWords(size_t packetSize);
 
 void convertTimeToString(char *timeStr, struct tm *timeInfo);
 

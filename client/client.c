@@ -17,7 +17,6 @@ void parseArgs(int argc, char **argv, inputArgs *args) {
   args->username = argv[1];
   args->contactNS = strcmp("ns", argv[2]) ? false : true;
   args->ipAdress = (uint8_t *) argv[3];
-  //memcpy(args->ipAdress, argv[3], sizeof(uint32_t));
   args->port = calloc(sizeof(uint8_t), PORT_LENGTH);
   memcpy(args->port, argv[4], PORT_LENGTH - 1);
 

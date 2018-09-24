@@ -85,8 +85,9 @@ bool readInputFromUser(clientData *cData) {
 
     if (!(strcmp(buffer, "quit\n") && strcmp(buffer, "QUIT\n"))){
       active = false;
-      uint8_t *buffer = pduCreator_quit(&buffSize);
-      ret = facade_write(cData, buffer, buffSize);
+      uint8_t *pduBuffer = pduCreator_quit(&buffSize);
+      ret = facade_write(cData->server_fd, pduBuffer, buffSize);
+      free(pduBuffer);
       printf("QUIT QUIT QUIT \n");
       if (ret != buffSize){
         fprintf(stderr, "Unable to write all data to socket.\n");
@@ -100,7 +101,7 @@ bool readInputFromUser(clientData *cData) {
       mess.id = NULL;
       mess.idSize =  0;
       mess.message = buffer;
-      mess.messageSize = strlen(buffer);
+      mess.messageSize = (uint16_t) strlen(buffer);
       mess.timeStamp = 0;
 
       uint8_t *packet = pduCreator_mess(&mess, &size);
@@ -111,8 +112,8 @@ bool readInputFromUser(clientData *cData) {
       printf("\n");
       ret = facade_write(cData->server_fd, packet, size);
       if (ret != size){
-        fprintf(stderr, "Unable to write all data to socket. Size %zd  ret %zd\n", size, ret);
-        printf("Errno : %s \n",strerror(errno));
+        fprintf(stderr, "%s: Unable to write all data to socket. Size %zd  ret %zd\n",__func__, size, ret);
+        fprintf(stderr, "Errno : %s \n", strerror(errno));
       }
     }
 
@@ -135,7 +136,13 @@ void handleMessPdu(pduMess *mess){
     convertTimeToString(timeString, timeInfo);
     fprintf(stdout, "%s > [%s] %s \n", timeString, mess->id, mess->message);
   } else {
-    fprintf(stderr, "Invalid checksum....\n");
+    fprintf(stderr, "%s: Invalid checksum....\n",__func__);
+    fprintf(stderr, "OPCODE %u\n", mess->opCode);
+    fprintf(stderr, "Id %u\n", mess->idSize);
+    fprintf(stderr, "Id %s\n", mess->id);
+    fprintf(stderr, "Mess %u\n", mess->messageSize);
+    fprintf(stderr, "Mess %s\n", mess->message);
+    fprintf(stderr, "Time %lu\n", mess->timeStamp);
   }
 }
 

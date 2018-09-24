@@ -54,13 +54,14 @@ TEST_F(PduReaderTest, read_reqPacket){
   pduReq r;
   char *serName = (char *)"testHost";
   uint8_t serLen = strlen(serName);
+  size_t bufferSize;
 
   r.opCode = REQ;
   r.tcpPort = 454;
   r.serverName = (uint8_t *)serName;
   r.serverNameSize = serLen;
 
-  uint8_t *retVal = pduCreator_req(&r, 0);
+  uint8_t *retVal = pduCreator_req(&r, &bufferSize);
   globalBuffer = retVal + 1;
 
   pduReq *ret = pduReader_req(4);
@@ -210,7 +211,7 @@ TEST_F(PduReaderTest, read_sListPacket){
 TEST_F(PduReaderTest, read_JoinPdu){
   pduJoin r;
   char str[] = "Micke";
-  int bufferSize;
+  size_t bufferSize;
   r.opCode = JOIN;
   r.id = (uint8_t *) str;
   r.idSize = strlen((char * ) r.id);
@@ -231,7 +232,7 @@ TEST_F(PduReaderTest, read_JoinPdu){
 TEST_F(PduReaderTest, read_pJoinPdu){
   pduPJoin r;
   char str[] = "Micke";
-  int bufferSize;
+  size_t bufferSize;
   r.opCode = PJOIN;
   r.id = (uint8_t *) str;
   r.idSize = strlen((char *) r.id);
@@ -254,7 +255,7 @@ TEST_F(PduReaderTest, read_pJoinPdu){
 TEST_F(PduReaderTest, read_pLeavePdu){
   pduPLeave r;
   char str[] = "Micke";
-  int bufferSize;
+  size_t bufferSize;
   r.opCode = PJOIN;
   r.id = (uint8_t *) str;
   r.idSize = strlen((char *) r.id);
@@ -277,6 +278,7 @@ TEST_F(PduReaderTest, read_pLeavePdu){
 TEST_F(PduReaderTest, read_participants){
   pduParticipants r;
   char *ids[2];
+  size_t bufferSize;
 
   ids[0] = (char *)"Micke";
   ids[1] = (char *)"Jonas";
@@ -285,7 +287,7 @@ TEST_F(PduReaderTest, read_participants){
   r.noOfIds = 2;
   r.ids = (uint8_t **)ids;
 
-  uint8_t *retVal = pduCreator_participants(&r, NULL);
+  uint8_t *retVal = pduCreator_participants(&r, &bufferSize);
   globalBuffer = retVal + 1;
   pduParticipants *ret = pduReader_participants(4);
 
@@ -311,6 +313,7 @@ TEST_F(PduReaderTest, read_participants){
 
 TEST_F(PduReaderTest, read_mess){
   pduMess r;
+  size_t bufferSize;
 
   r.opCode = MESS;
   r.id = (uint8_t *) "Micke";
@@ -319,15 +322,15 @@ TEST_F(PduReaderTest, read_mess){
   r.messageSize = strlen((char *) r.message);
   r.idSize = strlen((char *) r.id);
 
-  uint8_t checksum = calculateCheckSum((void*)&r.opCode, 1);
-  checksum += calculateCheckSum((void*)&r.idSize, 1);
-  checksum += calculateCheckSum((void*)&r.messageSize, 2);
-  checksum += calculateCheckSum((void*)&r.timeStamp, 4);
-  checksum += calculateCheckSum((void *)r.message, r.messageSize);
-  checksum += calculateCheckSum((void *)r.id, r.idSize);
+  uint8_t checksum = calculateCheckSum((void *) &r.opCode, 1);
+  checksum += calculateCheckSum((void *) &r.idSize, 1);
+  checksum += calculateCheckSum((void *) &r.messageSize, 2);
+  checksum += calculateCheckSum((void *) &r.timeStamp, 4);
+  checksum += calculateCheckSum((void *) r.message, r.messageSize);
+  checksum += calculateCheckSum((void *) r.id, r.idSize);
   checksum = ~checksum;
 
-  uint8_t *retVal = pduCreator_mess(&r, NULL);
+  uint8_t *retVal = pduCreator_mess(&r, &bufferSize);
   globalBuffer = retVal + 1;
   pduMess *ret = pduReader_mess(4);
 
@@ -341,7 +344,7 @@ TEST_F(PduReaderTest, read_mess){
   EXPECT_EQ(strcmp((char *)r.id, (char *) ret->id), 0);
 
 
-  EXPECT_FALSE(ret->isCheckSumOk);
+  EXPECT_TRUE(ret->isCheckSumOk);
 
 
   free(ret->message);

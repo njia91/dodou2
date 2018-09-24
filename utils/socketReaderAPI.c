@@ -29,15 +29,11 @@ void *waitForIncomingMessages(void *threadData){
 
     for (int i = 0; i < availFds; i++) {
       // read data from available FD;
-      fprintf(stdout, "WaitforIncomming messages...   %d ! \n", events[i].data.fd);
       if ((events[i].events & EPOLLRDHUP) || (events[i].events & EPOLLERR)){
-        fprintf(stdout, "EPOLLRDHUP ELLLER EPOLLERR1 EVENT \n");
         closeAndRemoveFD(rInfo->epoll_fd, events[i].data.fd);
       } else if ((events[i].events & EPOLLIN) ){
-        fprintf(stdout, "EPOOLIN EVENT \n");
         isSessionActive = rInfo->func(events[i].data.fd, (void *) rInfo->args);
         if (isSessionActive){
-          printf("REARM THE SOCKET FD !!! \n");
           ev.data.fd = events[i].data.fd;
           ev.events = EPOLLIN | EPOLLONESHOT ;
           facade_epoll_ctl(rInfo->epoll_fd, EPOLL_CTL_MOD, events[i].data.fd, &ev);
@@ -49,8 +45,9 @@ void *waitForIncomingMessages(void *threadData){
     }
     counter++;
     if (counter > 4) {
-      isSessionActive = false;
-      closeAndRemoveFD(rInfo->epoll_fd, 0);
+      //isSessionActive = false;
+      //printf("MAX AMOUNT OF TRIES....!!! \n");
+      //1closeAndRemoveFD(rInfo->epoll_fd, 0);
     }
   }
   printf("AVSLUTA SLUT PÅ FUNCTION!!! \n");

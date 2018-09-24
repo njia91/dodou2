@@ -285,8 +285,8 @@ TEST(PduCreatorTest, creatingMessPduServerSide){
 
   char retId[retIdSize + 1];
   char retMess[retMessSize + 1];
-  int offset = calculateNoOfWords(retMessSize) * WORD_SIZE;
-  memcpy(&retMess, retVal + (3 * WORD_SIZE), retMessSize);
+  size_t offset = calculateNoOfWords(retMessSize) * WORD_SIZE;
+  memcpy(&retMess, retVal + (3 * WORD_SIZE) , retMessSize);
   memcpy(&retId, retVal + (3 * WORD_SIZE) + offset, retIdSize);
   retId[retIdSize] = '\0';
   retMess[retMessSize] = '\0';
@@ -341,7 +341,7 @@ TEST(PduCreatorTest, creatingMessPduClientSide){
 
   char retId[retIdSize + 1];
   char retMess[retMessSize + 1];
-  int offset = calculateNoOfWords(retMessSize) * WORD_SIZE;
+  size_t offset = calculateNoOfWords(retMessSize) * WORD_SIZE;
   memcpy(&retMess, retVal + (3 * WORD_SIZE), retMessSize);
   memcpy(&retId, retVal + (3 * WORD_SIZE) + offset, retIdSize);
   retId[retIdSize] = '\0';

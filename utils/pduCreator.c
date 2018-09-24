@@ -9,9 +9,9 @@ uint8_t *pduCreator_req(pduReq *req, size_t *nByte) {
     return NULL;
   }
 
-  int packetSize =  WORD_SIZE + req->serverNameSize;
-  int noOfWords = calculateNoOfWords(packetSize);
-  *nByte = noOfWords * WORD_SIZE;
+  size_t packetSize =  WORD_SIZE + req->serverNameSize;
+  size_t noOfWords = calculateNoOfWords(packetSize);
+  *nByte = (noOfWords * WORD_SIZE);
   uint16_t u16;
 
   uint8_t *pduBuffer = calloc(sizeof(uint8_t), noOfWords * WORD_SIZE);
@@ -62,8 +62,8 @@ uint8_t *pduCreator_join(pduJoin *join, size_t *nByte){
     return NULL;
   }
 
-  int packetSize = WORD_SIZE + join->idSize;
-  int noOfWords = calculateNoOfWords(packetSize);
+  size_t packetSize = WORD_SIZE + join->idSize;
+  size_t noOfWords = calculateNoOfWords(packetSize);
   *nByte = noOfWords * WORD_SIZE;
   uint8_t *pduBuffer = calloc(sizeof(uint8_t), noOfWords * WORD_SIZE);
 
@@ -82,8 +82,8 @@ uint8_t *pduCreator_pJoin(pduPJoin *pJoin, size_t *nByte){
     return NULL;
   }
 
-  int packetSize = (2 * WORD_SIZE) + pJoin->idSize;
-  int noOfWords = calculateNoOfWords(packetSize);
+  size_t packetSize = (2 * WORD_SIZE) + pJoin->idSize;
+  size_t noOfWords = calculateNoOfWords(packetSize);
   *nByte = noOfWords * WORD_SIZE;
   uint32_t u32 = htonl(pJoin->timeStamp);
   uint8_t *pduBuffer = calloc(sizeof(uint8_t), noOfWords * WORD_SIZE);
@@ -109,8 +109,8 @@ uint8_t *pduCreator_participants(pduParticipants *par, size_t *nByte) {
     dataSize += strlen((char *)par->ids[i]) + 1;
   }
 
-  int packetSize = (2 * WORD_SIZE) + dataSize;
-  int noOfWords = calculateNoOfWords(packetSize);
+  size_t packetSize = (2 * WORD_SIZE) + dataSize;
+  size_t noOfWords = calculateNoOfWords(packetSize);
   *nByte = noOfWords * WORD_SIZE;
 
   dataSize = htons(dataSize);
@@ -151,17 +151,20 @@ uint8_t *pduCreator_mess(pduMess *mess, size_t *nByte) {
   }
 
   // Needed due to the variable length of both message and client id;
-  int noOfWords = 3;
-  int noOfWordsForMess = calculateNoOfWords(mess->messageSize);
-  int noOfWordsForId = calculateNoOfWords(mess->idSize);
+  size_t noOfWords = 3;
+  size_t noOfWordsForMess = calculateNoOfWords(mess->messageSize);
+  size_t noOfWordsForId = calculateNoOfWords(mess->idSize);
   noOfWords += noOfWordsForId + noOfWordsForMess;
+
+
+  fprintf(stdout, "NO OF WORDS %d \n", noOfWords);
 
   *nByte = noOfWords * WORD_SIZE;
 
-  uint8_t *pduBuffer = calloc(noOfWords * WORD_SIZE, sizeof(uint8_t));
+  uint8_t *pduBuffer = calloc(1, noOfWords * WORD_SIZE);
   uint16_t u16 = htons(mess->messageSize);
   uint32_t u32 = htonl(mess->timeStamp);
-  int offset = (3 + noOfWordsForMess) * WORD_SIZE;
+  size_t offset = (3 + noOfWordsForMess) * WORD_SIZE;
 
   memcpy(pduBuffer, &(mess->opCode), sizeof(uint8_t));
   memcpy(pduBuffer + (2 * BYTE_SIZE), &(mess->idSize), sizeof(uint8_t));
@@ -171,7 +174,9 @@ uint8_t *pduCreator_mess(pduMess *mess, size_t *nByte) {
   memcpy(pduBuffer + offset, mess->id, mess->idSize);
 
   uint8_t u8 = ~calculateCheckSum(pduBuffer, noOfWords * WORD_SIZE);
-  memcpy(pduBuffer + (3 * BYTE_SIZE), &u8, sizeof(uint8_t));
 
+  printf(" CHEKSUM BEFORE %u\n", u8);
+  memcpy(pduBuffer + (3 * BYTE_SIZE), &u8, sizeof(uint8_t));
+  printf("CheckSum Aftter %u\n", calculateCheckSum(pduBuffer, noOfWords * WORD_SIZE));
   return pduBuffer;
 }

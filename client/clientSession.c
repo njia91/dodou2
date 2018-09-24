@@ -110,6 +110,10 @@ bool readInputFromUser(clientData *cData) {
         printf("%d - ", packet[i]);
       }
       printf("\n");
+      for (int i = 0; i < size; i++){
+        printf("%c - ", packet[i]);
+      }
+      printf("\n");
       ret = facade_write(cData->server_fd, packet, size);
       if (ret != size){
         fprintf(stderr, "%s: Unable to write all data to socket. Size %zd  ret %zd\n",__func__, size, ret);

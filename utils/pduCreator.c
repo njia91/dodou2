@@ -154,6 +154,8 @@ uint8_t *pduCreator_mess(pduMess *mess, size_t *nByte) {
   size_t noOfWords = 3;
   size_t noOfWordsForMess = calculateNoOfWords(mess->messageSize);
   size_t noOfWordsForId = calculateNoOfWords(mess->idSize);
+  fprintf(stdout, "NO OF WORDS FÖR ID %d \n", noOfWordsForId);
+  fprintf(stdout, "NO OF WORDS FÖR MESS  %d \n", noOfWordsForMess);
   noOfWords += noOfWordsForId + noOfWordsForMess;
 
 

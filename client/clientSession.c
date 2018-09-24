@@ -101,7 +101,7 @@ bool readInputFromUser(clientData *cData) {
       mess.id = NULL;
       mess.idSize =  0;
       mess.message = buffer;
-      mess.messageSize = (uint16_t) strlen(buffer);
+      mess.messageSize = (uint16_t) (strlen(buffer) - 1);
       mess.timeStamp = 0;
 
       uint8_t *packet = pduCreator_mess(&mess, &size);

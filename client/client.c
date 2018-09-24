@@ -158,7 +158,7 @@ int client_main(int argc, char **argv){
   if (cData.contactNS){
     int nameServer_fd = establishConnectionWithNs(&cData);
     pduSList *pSList = getServerList(nameServer_fd);
-    shutdown(nameServer_fd);
+    shutdown(nameServer_fd, SHUT_RDWR);
     close(nameServer_fd);
     if (pSList == NULL){
       fprintf(stderr, "Something went wrong when reading data from Socket. "

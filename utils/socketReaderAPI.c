@@ -13,11 +13,8 @@ void *waitForIncomingMessages(void *threadData){
   struct epoll_event ev;
   bool isSessionActive = true;
 
-  int counter = 0;
-
   int availFds = 0;
   while (isSessionActive) {
-    fprintf(stdout, "Going to bed in epoll wait...  ! \n");
     availFds = facade_epoll_wait(rInfo->epoll_fd, events, MAX_EVENTS, -1);
     if (availFds == -1) {
       perror("epoll_wait: ");
@@ -28,11 +25,10 @@ void *waitForIncomingMessages(void *threadData){
     }
 
     for (int i = 0; i < availFds; i++) {
-      // read data from available FD;
       if ((events[i].events & EPOLLRDHUP) || (events[i].events & EPOLLERR)){
         closeAndRemoveFD(rInfo->epoll_fd, events[i].data.fd);
       } else if ((events[i].events & EPOLLIN) ){
-        isSessionActive = rInfo->func(events[i].data.fd, (void *) rInfo->args);
+        isSessionActive = rInfo->func(events[i].data.fd, rInfo->args);
         if (isSessionActive){
           ev.data.fd = events[i].data.fd;
           ev.events = EPOLLIN | EPOLLONESHOT ;
@@ -42,12 +38,6 @@ void *waitForIncomingMessages(void *threadData){
           break;
         }
       }
-    }
-    counter++;
-    if (counter > 4) {
-      //isSessionActive = false;
-      //printf("MAX AMOUNT OF TRIES....!!! \n");
-      //1closeAndRemoveFD(rInfo->epoll_fd, 0);
     }
   }
   printf("AVSLUTA SLUT PÅ FUNCTION!!! \n");

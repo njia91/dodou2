@@ -18,11 +18,12 @@ size_t calculateNoOfWords(size_t packetSize){
 }
 
 void convertTimeToString(char *timeStr, struct tm *timeInfo){
-  sprintf(timeStr, "%d/%d/%d %d:%d:%d",
-          timeInfo->tm_year,
-          timeInfo->tm_mon,
+  strftime(timeStr, TIMESTR_LENGTH, "%A - %H:%M:%S", timeInfo);
+ /* sprintf(timeStr, "%d/%d/%d %d:%d:%d",
+          1900 + timeInfo->tm_year,
+          timeInfo->tm_mon + 1,
           timeInfo->tm_mday,
           timeInfo->tm_hour,
-          timeInfo->tm_min,
-          timeInfo->tm_sec);
+          timeInfo->tm_min ,
+          timeInfo->tm_sec);*/
 }

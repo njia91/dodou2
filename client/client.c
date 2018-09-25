@@ -55,7 +55,6 @@ int establishConnectionWithNs(inputArgs *cData){
 
   facade_freeaddrinfo(res);
   return nameserver_fd;
-
 }
 
 pduSList *getServerList(int nameServer_fd){
@@ -91,6 +90,7 @@ pduSList *getServerList(int nameServer_fd){
 
 int getServerChoiceFromUser(pduSList *pSList, inputArgs *inArgs){
   int userInput = 0;
+  bool serverSelectionOngoing = true;
 
   // Frees old port string used to connect to NS
   free(inArgs->port);
@@ -101,7 +101,7 @@ int getServerChoiceFromUser(pduSList *pSList, inputArgs *inArgs){
   }
 
   do{
-    userInput = -1;
+
     fprintf(stdout, "-----------------------------------------------------------------\n");
     fprintf(stdout, "List of available servers: \n");
     for (int i = 0; i < pSList->noOfServers; i++){
@@ -118,7 +118,7 @@ int getServerChoiceFromUser(pduSList *pSList, inputArgs *inArgs){
     }
     // TODO CLear STDIN before input?
     fprintf(stdout, "-----------------------------------------------------------------\n");
-    fprintf(stdout, "Select a server between 1 and %d. Zero to exit:  ", pSList->noOfServers);
+    fprintf(stdout, "Select a server between 1 and %d. Type -1 to exit:  ", pSList->noOfServers);
     char *buffer = NULL;
     size_t size = 0;
     fflush(stdin);
@@ -128,23 +128,25 @@ int getServerChoiceFromUser(pduSList *pSList, inputArgs *inArgs){
       return 0;
     }
 
-    if (buffer[0] - '0' <= pSList->noOfServers && buffer[0] -'0' >= 0){
-      userInput = buffer[0] - '0';
-      if (userInput){
-        inArgs->ipAdress = calloc(1, 16);
-        // Convert DOT style IP address.
-        sprintf((char *) inArgs->ipAdress, "%u.%u.%u.%u", pSList->sInfo[userInput - 1].ipAdress[0],
-                                                         pSList->sInfo[userInput - 1].ipAdress[1],
-                                                         pSList->sInfo[userInput - 1].ipAdress[2],
-                                                         pSList->sInfo[userInput - 1].ipAdress[3]);
-        inArgs->port = calloc(sizeof(uint8_t), PORT_LENGTH);
-        sprintf(inArgs->port, "%d", pSList->sInfo[userInput - 1].port);
-      }
+    userInput = atoi(buffer);
+    if (userInput > 0 && userInput <= pSList->noOfServers){
+      inArgs->ipAdress = calloc(1, 16);
+      // Convert DOT style IP address.
+      sprintf((char *) inArgs->ipAdress, "%u.%u.%u.%u", pSList->sInfo[userInput - 1].ipAdress[0],
+                                                       pSList->sInfo[userInput - 1].ipAdress[1],
+                                                       pSList->sInfo[userInput - 1].ipAdress[2],
+                                                       pSList->sInfo[userInput - 1].ipAdress[3]);
+      inArgs->port = calloc(sizeof(uint8_t), PORT_LENGTH);
+      sprintf(inArgs->port, "%d", pSList->sInfo[userInput - 1].port);
+      serverSelectionOngoing = false;
+    } else if (userInput == -1) {
+      serverSelectionOngoing = false;
     } else {
-        fprintf(stdout, "Invalid choice. Please select a server in the list.\n");
+      fprintf(stdout, "\nInvalid choice or input. Please select a server in the list.\n\n");
     }
+
     free(buffer);
-  }while(userInput == -1);
+  } while(serverSelectionOngoing);
   fprintf(stdout, "\n-----------------------------------------------------------------\n\n");
 
   return userInput;
@@ -165,17 +167,13 @@ int client_main(int argc, char **argv){
                       "Terminating Program\n");
       exit(EXIT_FAILURE);
     }
-    int ret = getServerChoiceFromUser(pSList, &cData);
+    int userChoice = getServerChoiceFromUser(pSList, &cData);
     deletePdu((genericPdu *)pSList);
 
-    if (ret == 0){
+    if (userChoice == - 1){
       exit(EXIT_SUCCESS);
     }
   }
-
-
-  printf("Client name : %s, IP: %d.%d.%d.%d, Port %s \n\n", cData.username, cData.ipAdress[0],
-         cData.ipAdress[1], cData.ipAdress[2], cData.ipAdress[3], cData.port);
 
   // Start Session
   startChatSession(&cData);

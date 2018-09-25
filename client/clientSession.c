@@ -5,6 +5,7 @@
 #include "clientSession.h"
 #include <pduReader.h>
 #include <fcntl.h>
+#include <ctype.h>
 #include "sysCall_facade.h"
 #include "pduCommon.h"
 
@@ -23,9 +24,7 @@ genericPdu *getPduFromSocket(int socket_fd){
 bool processSocketData(int socket_fd, void *args){
   bool allOk = true;
   clientData *cData = (clientData *)args;
-
   if (socket_fd == cData->commonEventFd) {
-    fprintf(stderr, "Terminate RECEIVED FROM PARTNER THREAD \n");
     eventfd_t value = 0;
 
     if (facade_read(socket_fd, &value, sizeof(eventfd_t))){
@@ -46,25 +45,28 @@ bool processSocketData(int socket_fd, void *args){
     }
 
   } else {
-    printf("\nHandle Message from Server \n");
     genericPdu *p = getPduFromSocket(socket_fd);
     if (p == NULL){
       return false;
     }
 
     if (p->opCode == PJOIN || p->opCode == PLEAVE){
-      notifyUserOfChatRoomChanges((pduPJoin *) p);
+      pduPJoin *pJoin = (pduPJoin *) p;
+      if (strcmp((char *)pJoin->id, cData->username) != 0){
+        notifyUserOfChatRoomChanges((pduPJoin *) p);
+      }
     } else if (p->opCode == QUIT){
       fprintf(stderr, "\nChat server has terminated the session. Terminating \n");
       allOk = false;
     } else if (p->opCode == MESS){
-      handleMessPdu((pduMess *) p);
+      pduMess *mess = (pduMess *) p;
+      // Do not handle messages sent by this client.
+      if (strcmp((char *)mess->id, cData->username) != 0){
+        handleMessPdu((pduMess *) p);
+      }
     }
-
     deletePdu(p);
   }
-
-  printf("\n End of processSocketData... \n");
   return allOk;
 }
 
@@ -74,16 +76,12 @@ bool readInputFromUser(clientData *cData) {
   bool active = true;
   ssize_t ret = 0;
   fflush(stdin);
-  fprintf(stdout, "Reading input from user...  ! \n");
+
   if (getline(&buffer, &buffSize, stdin) == -1){
     fprintf(stderr, "Failed to read data from user: %s\n", strerror(errno));
     active = false;
-
   } else {
-    fprintf(stdout, "STDIN DATA %s  SIZE OF %zd buffsize %zd\n",buffer, sizeof(buffer), buffSize);
-
-
-    if (!(strcmp(buffer, "quit\n") && strcmp(buffer, "QUIT\n"))){
+    if (strcmp(buffer, "QUIT\n") == 0){
       active = false;
       uint8_t *pduBuffer = pduCreator_quit(&buffSize);
       ret = facade_write(cData->server_fd, pduBuffer, buffSize);
@@ -93,34 +91,25 @@ bool readInputFromUser(clientData *cData) {
         fprintf(stderr, "Unable to write all data to socket.\n");
       }
     } else {
-      printf("\nTJOO HEEEJ1111 \n");
+      // Prepare Message PDU
       pduMess mess;
       size_t size = 0;
-      //char str[] = "Michael";
       mess.opCode = MESS;
       mess.id = NULL;
       mess.idSize =  0;
-      mess.message = buffer;
-      mess.messageSize = (uint16_t) (strlen(buffer) - 1);
+      mess.message = (uint8_t *) buffer;
+      mess.messageSize = (uint16_t) strlen(buffer);
       mess.timeStamp = 0;
 
       uint8_t *packet = pduCreator_mess(&mess, &size);
-
-      for (int i = 0; i < size; i++){
-        printf("%d - ", packet[i]);
-      }
-      printf("\n");
-      for (int i = 0; i < size; i++){
-        printf("%c - ", packet[i]);
-      }
-      printf("\n");
+      // Send package
       ret = facade_write(cData->server_fd, packet, size);
+      free(packet);
       if (ret != size){
         fprintf(stderr, "%s: Unable to write all data to socket. Size %zd  ret %zd\n",__func__, size, ret);
         fprintf(stderr, "Errno : %s \n", strerror(errno));
       }
     }
-
   }
   free(buffer);
   return active;
@@ -130,23 +119,21 @@ void notifyUserOfChatRoomChanges(pduPJoin *pJoin){
   struct tm *timeInfo = localtime((time_t *) &pJoin->timeStamp);
   char timeString[20];
   convertTimeToString(timeString, timeInfo);
-  fprintf(stdout, "%s > User %s has %s the chat room \n", timeString, pJoin->id, pJoin->opCode == PJOIN ? "joined" : "left");
+  fprintf(stdout, "%s [Server notification] User %s has %s the chat room \n", timeString, pJoin->id, pJoin->opCode == PJOIN ? "joined" : "left");
 }
 
 void handleMessPdu(pduMess *mess){
   if (mess->isCheckSumOk){
     struct tm *timeInfo = localtime((time_t *) &mess->timeStamp);
-    char timeString[20];
+    char timeString[TIMESTR_LENGTH];
     convertTimeToString(timeString, timeInfo);
-    fprintf(stdout, "%s > [%s] %s \n", timeString, mess->id, mess->message);
+    if (mess->idSize == 0){
+      fprintf(stdout, "\n%s [SERVER MESSAGE] > %s\n", timeString, mess->message);
+    } else {
+      fprintf(stdout, "%s [%s] %s", timeString, mess->id, mess->message);
+    }
   } else {
     fprintf(stderr, "%s: Invalid checksum....\n",__func__);
-    fprintf(stderr, "OPCODE %u\n", mess->opCode);
-    fprintf(stderr, "Id %u\n", mess->idSize);
-    fprintf(stderr, "Id %s\n", mess->id);
-    fprintf(stderr, "Mess %u\n", mess->messageSize);
-    fprintf(stderr, "Mess %s\n", mess->message);
-    fprintf(stderr, "Time %lu\n", mess->timeStamp);
   }
 }
 
@@ -255,7 +242,7 @@ void startChatSession(inputArgs *inArgs){
     exit(EXIT_FAILURE);
   }
 
-  ret = printServerParticipants(server_fd, inArgs);
+  printServerParticipants(server_fd, inArgs);
 
   epoll_fd = epoll_create1(0);
 
@@ -282,7 +269,6 @@ void startChatSession(inputArgs *inArgs){
   ev_ITC.data.fd = event_fd;
   ev_ITC.events = EPOLLIN | EPOLLONESHOT;
   facade_epoll_ctl(epoll_fd, EPOLL_CTL_ADD, event_fd, &ev_ITC);
-  printf(" EVENT FD %d \n", event_fd);
 
   //facade_setToNonBlocking(STDIN_FILENO);
   facade_setToNonBlocking(server_fd);

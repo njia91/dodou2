@@ -39,5 +39,4 @@ int printServerParticipants(int server_fd, inputArgs *inArgs);
 
 bool readInputFromUser(clientData *cData);
 
-
 #endif //DODOU2_CLIENTSESSION_H

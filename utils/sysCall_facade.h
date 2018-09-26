@@ -21,14 +21,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-// Use as reference: https://www.ibm.com/support/knowledgecenter/en/ssw_i5_54/rzab6/xnonblock.htm
-
-//Defines own version for testing purposes
-
-//  status = pthread_kill( threadid, SIGUSR1);  <<<---- Signal other threads to STOP
-
-// Client needs a separate thread for reading and writing to socket.
-
 
 int facade_getAddrinfo(const char *name,
                        const char *service,

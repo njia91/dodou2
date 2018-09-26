@@ -10,7 +10,7 @@ static const uint8_t BYTE_SIZE     = 1;
 static const uint8_t WORD_SIZE     = 4;
 
 static const int PORT_LENGTH = 6;
-static const int TIMESTR_LENGTH = 20;
+static const int TIMESTR_LENGTH = 80;
 
 //Operational Codes 
 static const uint8_t REQ           = 0;

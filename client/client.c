@@ -16,7 +16,8 @@ void parseArgs(int argc, char **argv, inputArgs *args) {
   }
   args->username = argv[1];
   args->contactNS = strcmp("ns", argv[2]) ? false : true;
-  args->ipAdress = (uint8_t *) argv[3];
+  args->ipAdress = calloc(strlen(argv[3]) + 1, sizeof(uint8_t));
+  strcpy((char *)args->ipAdress, argv[3]);
   args->port = calloc(sizeof(uint8_t), PORT_LENGTH);
   memcpy(args->port, argv[4], PORT_LENGTH - 1);
 
@@ -76,6 +77,9 @@ pduSList *getServerList(int nameServer_fd){
 
   genericPdu *pdu = getDataFromSocket(nameServer_fd);
 
+  if (pdu == NULL){
+    return NULL;
+  }
 
   if (pdu->opCode != SLIST){
     fprintf(stderr, "Invalid packet received from Name Server.\n"
@@ -163,8 +167,8 @@ int client_main(int argc, char **argv){
     shutdown(nameServer_fd, SHUT_RDWR);
     close(nameServer_fd);
     if (pSList == NULL){
-      fprintf(stderr, "Something went wrong when reading data from Socket. "
-                      "Terminating Program\n");
+      fprintf(stderr, "%s: Could not retrieve server list from namserver."
+                      "Terminating Program\n", __func__);
       exit(EXIT_FAILURE);
     }
     int userChoice = getServerChoiceFromUser(pSList, &cData);

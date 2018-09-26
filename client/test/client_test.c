@@ -15,20 +15,6 @@
 #include "clientSession.h"
 #include <time.h>
 
-/*
-
- FILE *fp;
-
-
-   fp = freopen("file.txt", "r+", stdout);
-
-   printf("This text is redirected to file.txt\n");
-
-   fclose(fp);
-
- freopen("filename", "r", stdin);
-
-*/
 
 pduSList *createSListPdu(){
   pduSList *p;
@@ -123,12 +109,16 @@ void clientTest_recieveAndSendDatafromServer(){
 
   readerInfo rInfo;
 
-  //will_return(facade_epoll_wait, 1);
+  clientData cData;
+
+  cData.commonEventFd = 99;
+  cData.server_fd = 3;
+  cData.username = "Michael";
 
   rInfo.epoll_fd = 1;
-  rInfo.packetList = NULL;
   rInfo.func = processSocketData;
-  rInfo.commonEventFd = 99;
+  rInfo.args = (void *) &cData;
+  rInfo.numOfActiveFds = 1;
 
   char id[] = "Michael Åäö";
   char mess[] = "First mess ";
@@ -139,7 +129,7 @@ void clientTest_recieveAndSendDatafromServer(){
   memcpy(mess1->message, mess, mess1->messageSize + 1);
   mess1->id = calloc(mess1->idSize, sizeof(uint8_t) + 1);
   memcpy(mess1->id, id, mess1->idSize + 1);
-  mess1->isCheckSumOk = 255;
+  mess1->isCheckSumOk = true;
   mess1->opCode = MESS;
 
   pduPJoin *pJoin = calloc(1, sizeof(pduPJoin));
@@ -155,23 +145,81 @@ void clientTest_recieveAndSendDatafromServer(){
   //will_return(getDataFromSocket, NULL);
 
   // pJoin
+  will_return(facade_epoll_wait, EPOLLIN);
   will_return(facade_epoll_wait, 23);
   will_return(facade_epoll_wait, 1);
 
   //Mess
+  will_return(facade_epoll_wait, EPOLLIN);
   will_return(facade_epoll_wait, 23);
   will_return(facade_epoll_wait, 1);
 
   //Stdin
+  will_return(facade_epoll_wait, EPOLLIN);
   will_return(facade_epoll_wait, STDIN_FILENO);
   will_return(facade_epoll_wait, 1);
 
   //Dummy values
-  will_return(facade_epoll_wait, rInfo.commonEventFd);
+  will_return(facade_epoll_wait, EPOLLRDHUP);
+  will_return(facade_epoll_wait, cData.commonEventFd);
   will_return(facade_epoll_wait, 1);
 
+  waitForIncomingMessages((void *) &(rInfo));
 
-  will_return(facade_read, &TERMINATE);
+  fclose(fp);
+};
+
+void clientTest_recieveMessWithInvalidCheckSum(){
+  FILE *fp;
+  fp = freopen("../testSupport/dataSentFromServer.txt", "r", stdin);
+  IS_MOCKOBJECT_SET = true;
+
+  readerInfo rInfo;
+
+  clientData cData;
+
+  cData.commonEventFd = 99;
+  cData.server_fd = 3;
+  cData.username = "Michael";
+
+  rInfo.epoll_fd = 1;
+  rInfo.func = processSocketData;
+  rInfo.args = (void *) &cData;
+  rInfo.numOfActiveFds = 1;
+
+  char id[] = "Michael Åäö";
+  char mess[] = "First mess ";
+  pduMess *mess1 = calloc(1, sizeof(pduMess));
+  mess1->idSize = (uint8_t) strlen(id);
+  mess1->messageSize = (uint16_t) strlen(mess);
+  mess1->message = calloc(mess1->messageSize, sizeof(uint8_t) + 1);
+  memcpy(mess1->message, mess, mess1->messageSize + 1);
+  mess1->id = calloc(mess1->idSize, sizeof(uint8_t) + 1);
+  memcpy(mess1->id, id, mess1->idSize + 1);
+  mess1->isCheckSumOk = false;
+  mess1->opCode = MESS;
+
+  pduPJoin *pJoin = calloc(1, sizeof(pduPJoin));
+  pJoin->opCode = PLEAVE;
+  pJoin->idSize = (uint8_t) strlen(id);
+  time((time_t *)&pJoin->timeStamp);
+  pJoin->id = calloc(pJoin->idSize, sizeof(uint8_t) + 1);
+  memcpy(pJoin->id, id, pJoin->idSize + 1);
+
+
+  will_return(getDataFromSocket, pJoin);
+  will_return(getDataFromSocket, mess1);
+  //will_return(getDataFromSocket, NULL);
+
+  // pJoin
+  will_return(facade_epoll_wait, EPOLLIN);
+  will_return(facade_epoll_wait, 23);
+  will_return(facade_epoll_wait, 1);
+
+  //Mess
+  will_return(facade_epoll_wait, EPOLLIN);
+  will_return(facade_epoll_wait, 23);
+  will_return(facade_epoll_wait, 1);
 
   waitForIncomingMessages((void *) &(rInfo));
 
@@ -180,18 +228,23 @@ void clientTest_recieveAndSendDatafromServer(){
 
 
 int main(int argc, char* argv[]) {
-/*  const struct CMUnitTest tests[] = {
-          cmocka_unit_test(clientTest_connectToServer),
-          cmocka_unit_test(clientTest_recieveAndSendDatafromServer),
-          };*/
   const struct CMUnitTest tests[] = {
-          cmocka_unit_test(clientTest_recieveAndSendDatafromServer),
-  };
-
-
-/*  const struct CMUnitTest tests[] = {
           cmocka_unit_test(clientTest_connectToServer),
-  };*/
+          cmocka_unit_test(clientTest_recieveAndSendDatafromServer),
+          cmocka_unit_test(clientTest_recieveMessWithInvalidCheckSum),
+          };
+/*
+  const struct CMUnitTest tests[] = {
+          cmocka_unit_test(clientTest_recieveMessWithInvalidCheckSum),
+  };
+*/
+
+/*
+
+  const struct CMUnitTest tests[] = {
+          cmocka_unit_test(clientTest_connectToServer),
+  };
+*/
 
   return cmocka_run_group_tests(tests, NULL, NULL);
   return 0;

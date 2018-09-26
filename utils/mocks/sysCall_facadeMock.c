@@ -56,7 +56,7 @@ int facade_setToNonBlocking(int socket_fd){
 
 int facade_epoll_wait(int epfd, struct epoll_event *events, int maxEvents, int timeout){
   if(IS_MOCKOBJECT_SET){
-    events[0].events = EPOLLIN;
+    events[0].events = (uint32_t)mock();
     events[0].data.fd = (int)mock();
     return (int)mock();
   }

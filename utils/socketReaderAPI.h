@@ -25,6 +25,7 @@ typedef bool processEvent(int, void *);
 
 typedef struct {
   int epoll_fd;
+  int numOfActiveFds;
   void *args;
   processEvent *func;
 } readerInfo;

@@ -62,7 +62,7 @@ bool processSocketData(int socket_fd, void *args){
       pduMess *mess = (pduMess *) p;
       // Do not handle messages sent by this client.
       if (strcmp((char *)mess->id, cData->username) != 0){
-        handleMessPdu((pduMess *) p);
+        allOk = handleMessPdu((pduMess *) p);
       }
     }
     deletePdu(p);
@@ -86,7 +86,6 @@ bool readInputFromUser(clientData *cData) {
       uint8_t *pduBuffer = pduCreator_quit(&buffSize);
       ret = facade_write(cData->server_fd, pduBuffer, buffSize);
       free(pduBuffer);
-      printf("QUIT QUIT QUIT \n");
       if (ret != buffSize){
         fprintf(stderr, "Unable to write all data to socket.\n");
       }
@@ -108,6 +107,9 @@ bool readInputFromUser(clientData *cData) {
       if (ret != size){
         fprintf(stderr, "%s: Unable to write all data to socket. Size %zd  ret %zd\n",__func__, size, ret);
         fprintf(stderr, "Errno : %s \n", strerror(errno));
+        if (errno == EBADF){
+          active = false;
+        }
       }
     }
   }
@@ -119,10 +121,10 @@ void notifyUserOfChatRoomChanges(pduPJoin *pJoin){
   struct tm *timeInfo = localtime((time_t *) &pJoin->timeStamp);
   char timeString[20];
   convertTimeToString(timeString, timeInfo);
-  fprintf(stdout, "%s [Server notification] User %s has %s the chat room \n", timeString, pJoin->id, pJoin->opCode == PJOIN ? "joined" : "left");
+  fprintf(stdout, "%s [Server notification] User %s has %s the chat room \n", timeString, pJoin->id, (pJoin->opCode == PJOIN) ? "joined" : "left");
 }
 
-void handleMessPdu(pduMess *mess){
+bool handleMessPdu(pduMess *mess){
   if (mess->isCheckSumOk){
     struct tm *timeInfo = localtime((time_t *) &mess->timeStamp);
     char timeString[TIMESTR_LENGTH];
@@ -132,8 +134,10 @@ void handleMessPdu(pduMess *mess){
     } else {
       fprintf(stdout, "%s [%s] %s", timeString, mess->id, mess->message);
     }
+    return true;
   } else {
-    fprintf(stderr, "%s: Invalid checksum....\n",__func__);
+    fprintf(stderr, "%s: Invalid checksum packet checksum.\n",__func__);
+    return false;
   }
 }
 
@@ -283,6 +287,7 @@ void startChatSession(inputArgs *inArgs){
   rInfo.args = &cData;
   rInfo.epoll_fd = epoll_fd;
   rInfo.func = processSocketData;
+  rInfo.numOfActiveFds = 1; // Only counting the Server socket.
 
 
   fflush(stdin);

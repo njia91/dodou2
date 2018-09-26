@@ -27,7 +27,7 @@ void handlePLeacePdu(pduPLeave *pLeave);
 
 void handleQuitPdu(pduQuit *quit);
 
-void handleMessPdu(pduMess *mess);
+bool handleMessPdu(pduMess *mess);
 
 void startChatSession(inputArgs *inArgs);
 

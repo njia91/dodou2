@@ -5,7 +5,6 @@
 #include "client.h"
 #include "clientSession.h"
 #include <stdio.h>
-#include <unitypes.h>
 
 
 void parseArgs(int argc, char **argv, inputArgs *args) {

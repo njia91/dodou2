@@ -6,7 +6,6 @@
 #include <setjmp.h>
 #include <cmocka.h>
 #include <sysCall_facade.h>
-#include <unitypes.h>
 #include <stdio.h>
 #include <stdbool.h>
 

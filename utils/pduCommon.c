@@ -1,4 +1,3 @@
-#include <bits/types/struct_tm.h>
 #include "pduCommon.h"
 
 uint8_t calculateCheckSum(void *p, size_t size) {

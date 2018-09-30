@@ -30,8 +30,6 @@ include_directories(lib/cmocka/include)
 include_directories(lib/cmocka/build/src)
 
 
-find_library(CMOCKA_LIBRARY libcmocka_shared.so)
-
 add_subdirectory(lib/googletest)
 link_directories({CMAKE_SOURCE_DIR}/lib)
 link_directories(utils)
@@ -81,8 +79,8 @@ add_library(UTILS ${UTILS_SOURCE})
 target_link_libraries(testPduCreator ${PThreadLib} ${CMAKE_SOURCE_DIR}/lib/libgtest.a)
 target_link_libraries(testPduReader ${PThreadLib} ${CMAKE_SOURCE_DIR}/lib/libgtest.a)
 target_link_libraries(client ${PThreadLib} ${UTILS})
-target_link_libraries(clientTest ${PThreadLib} ${CMOCKA_LIBRARY})
-target_link_libraries(testPduReader ${CMOCKA_LIBRARY})
+target_link_libraries(clientTest ${PThreadLib})
+target_link_libraries(testPduReader)
 
 target_compile_options(clientTest PRIVATE "-D_POSIX_C_SOURCE=200112L" ${CCOMPILE_OPTIONS})
 target_compile_options(testPduReader PRIVATE ${CPPCOMPILE_OPTIONS})

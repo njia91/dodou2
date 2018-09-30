@@ -18,7 +18,7 @@ set(UTILS_SOURCE
         utils/socketReaderAPI.c
         utils/list.c)
 
-set(CMOCKA_SRC lib/cmocka/build/src)
+set(CMOCKA_SRC lib/cmocka)
 
 
 include_directories(lib/googletest/include lib/googletest/src)
@@ -31,6 +31,8 @@ include_directories(lib/cmocka/build/src)
 
 
 add_subdirectory(lib/googletest)
+add_subdirectory(${CMOCKA_SRC})
+
 link_directories({CMAKE_SOURCE_DIR}/lib)
 link_directories(utils)
 
@@ -73,14 +75,15 @@ add_executable(testPduReader
 
 
 add_library(UTILS ${UTILS_SOURCE})
+#add_library(CMOCKA SHARED ${CMOCKA_SRC}/src/cmocka.c)
 
 
 
 target_link_libraries(testPduCreator ${PThreadLib} ${CMAKE_SOURCE_DIR}/lib/libgtest.a)
 target_link_libraries(testPduReader ${PThreadLib} ${CMAKE_SOURCE_DIR}/lib/libgtest.a)
 target_link_libraries(client ${PThreadLib} ${UTILS})
-target_link_libraries(clientTest ${PThreadLib})
-target_link_libraries(testPduReader)
+target_link_libraries(clientTest ${PThreadLib} ${CMOCKA_SHARED_LIBRARY})
+target_link_libraries(testPduReader ${CMOCKA_SHARED_LIBRARY})
 
 target_compile_options(clientTest PRIVATE "-D_POSIX_C_SOURCE=200112L" ${CCOMPILE_OPTIONS})
 target_compile_options(testPduReader PRIVATE ${CPPCOMPILE_OPTIONS})

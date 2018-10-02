@@ -8,10 +8,10 @@
 #include "pduCommon.h"
 #include "sysCall_facade.h"
 
-void *getDataFromSocket(int socket_fd);
+genericPdu * getDataFromSocket(int socket_fd);
 
 //Server-nameserver interaction
-pduReq *pduReader_req(int socket_fd);
+pduReg *pduReader_req(int socket_fd);
 
 pduAlive *pduReader_alive(int socket_fd);
 

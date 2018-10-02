@@ -10,7 +10,7 @@
 #include "pduCommon.h"
 
 //Server-nameserver interaction
-uint8_t *pduCreator_req(pduReq *req, size_t *nByte);
+uint8_t *pduCreator_reg(pduReg *reg, size_t *nByte);
 
 uint8_t *pduCreator_alive(pduAlive *alive, size_t *nByte);
 

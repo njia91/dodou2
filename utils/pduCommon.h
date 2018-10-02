@@ -13,7 +13,7 @@ static const int PORT_LENGTH = 6;
 static const int TIMESTR_LENGTH = 80;
 
 //Operational Codes 
-static const uint8_t REQ           = 0;
+static const uint8_t REG           = 0;
 static const uint8_t ACK           = 1;
 static const uint8_t ALIVE         = 2;
 static const uint8_t GETLIST       = 3;
@@ -31,7 +31,7 @@ typedef struct {
   uint8_t   serverNameSize;
   uint8_t   *serverName;
   uint16_t  tcpPort;
-} pduReq;
+} pduReg;
 
 typedef struct {
   uint8_t   opCode;

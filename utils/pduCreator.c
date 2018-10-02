@@ -2,25 +2,25 @@
 
 
 //Server-nameserver interaction
-uint8_t *pduCreator_req(pduReq *req, size_t *nByte) {
+uint8_t *pduCreator_reg(pduReg *reg, size_t *nByte) {
 
-  if(req->opCode != REQ){
+  if(reg->opCode != REG){
     fprintf(stderr, "Invalid Operation Code.\n");
     return NULL;
   }
 
-  size_t packetSize =  WORD_SIZE + req->serverNameSize;
+  size_t packetSize =  WORD_SIZE + reg->serverNameSize;
   size_t noOfWords = calculateNoOfWords(packetSize);
   *nByte = (noOfWords * WORD_SIZE);
   uint16_t u16;
 
   uint8_t *pduBuffer = calloc(sizeof(uint8_t), noOfWords * WORD_SIZE);
-  u16 = htons(req->tcpPort);
+  u16 = htons(reg->tcpPort);
 
-  memcpy(pduBuffer, &(req->opCode), sizeof(uint8_t));
-  memcpy(pduBuffer + BYTE_SIZE, &(req->serverNameSize), sizeof(uint8_t));
+  memcpy(pduBuffer, &(reg->opCode), sizeof(uint8_t));
+  memcpy(pduBuffer + BYTE_SIZE, &(reg->serverNameSize), sizeof(uint8_t));
   memcpy(pduBuffer + (2 * BYTE_SIZE), &u16, sizeof(uint16_t));
-  memcpy(pduBuffer + WORD_SIZE, req->serverName, req->serverNameSize);
+  memcpy(pduBuffer + WORD_SIZE, reg->serverName, reg->serverNameSize);
 
   return pduBuffer;
 } 

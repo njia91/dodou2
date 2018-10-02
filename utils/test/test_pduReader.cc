@@ -51,22 +51,22 @@ class PduReaderTest : public testing::Test
 
 
 TEST_F(PduReaderTest, read_reqPacket){
-  pduReq r;
+  pduReg r;
   char *serName = (char *)"testHost";
   uint8_t serLen = strlen(serName);
   size_t bufferSize;
 
-  r.opCode = REQ;
+  r.opCode = REG;
   r.tcpPort = 454;
   r.serverName = (uint8_t *)serName;
   r.serverNameSize = serLen;
 
-  uint8_t *retVal = pduCreator_req(&r, &bufferSize);
+  uint8_t *retVal = pduCreator_reg(&r, &bufferSize);
   globalBuffer = retVal + 1;
 
-  pduReq *ret = pduReader_req(4);
+  pduReg *ret = pduReader_req(4);
 
-  EXPECT_EQ(ret->opCode, REQ);
+  EXPECT_EQ(ret->opCode, REG);
   EXPECT_EQ(ret->serverNameSize, serLen);
   EXPECT_EQ(ret->tcpPort, r.tcpPort);
   EXPECT_EQ(strcmp((char *)ret->serverName, (char *)r.serverName), 0);

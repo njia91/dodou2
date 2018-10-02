@@ -9,12 +9,12 @@
 #include <cmocka.h>
 #include "pduReader.h"
 
-void *getDataFromSocket(int socket_fd) {
+genericPdu * getDataFromSocket(int socket_fd) {
   return (void *)mock();
 }
 
 //Server-nameserver interaction
-pduReq *pduReader_req(int socket_fd);
+pduReg *pduReader_req(int socket_fd);
 
 pduAlive *pduReader_alive(int socket_fd);
 

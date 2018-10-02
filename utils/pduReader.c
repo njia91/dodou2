@@ -14,7 +14,7 @@
 
 // TODO Check return values from read() and calloc().
 
-void *getDataFromSocket(int socket_fd) {
+genericPdu *getDataFromSocket(int socket_fd) {
   genericPdu *pdu = NULL;
 
   uint8_t opCode = 0;
@@ -33,7 +33,7 @@ void *getDataFromSocket(int socket_fd) {
 
   if(opCode == SLIST){
     pdu = (genericPdu *) pduReader_SList(socket_fd);
-  } else if (opCode == REQ){
+  } else if (opCode == REG){
     pdu = (genericPdu *) pduReader_req(socket_fd);
   } else if (opCode == ACK){
     pdu = (genericPdu *) pduReader_ack(socket_fd);
@@ -64,10 +64,10 @@ void *getDataFromSocket(int socket_fd) {
 }
 
 //Server-nameserver interaction
-pduReq *pduReader_req(int socket_fd){
-  pduReq *p = calloc(sizeof(pduReq), 1);
+pduReg *pduReader_req(int socket_fd){
+  pduReg *p = calloc(sizeof(pduReg), 1);
   uint8_t buffer[WORD_SIZE];
-  p->opCode = REQ;
+  p->opCode = REG;
   int offset = 0;
   facade_read(socket_fd, buffer, 3 * BYTE_SIZE);
 
@@ -92,7 +92,7 @@ pduReq *pduReader_req(int socket_fd){
 }
 
 pduAck *pduReader_ack(int socket_fd){
-  pduAck *p = calloc(sizeof(pduReq), 1);
+  pduAck *p = calloc(sizeof(pduReg), 1);
   p->opCode = ACK;
   uint8_t buffer[WORD_SIZE];
 

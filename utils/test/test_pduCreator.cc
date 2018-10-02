@@ -24,17 +24,17 @@ class PduCreatorTest : public testing::Test
 
 
 TEST(PduCreatorTest, creatingReqPacket){
-  pduReq r;
+  pduReg r;
   char *serName = (char *)"testHost";
   uint8_t serLen = strlen(serName);
   size_t bufferSize;
 
-  r.opCode = REQ;
+  r.opCode = REG;
   r.tcpPort = 454;
   r.serverName = (uint8_t *)serName;
   r.serverNameSize = serLen;
 
-  uint8_t *retVal = pduCreator_req(&r, &bufferSize);
+  uint8_t *retVal = pduCreator_reg(&r, &bufferSize);
 
   uint8_t retOpCode;
   uint16_t retTcpPort;
@@ -48,7 +48,7 @@ TEST(PduCreatorTest, creatingReqPacket){
   retSerName[retSerNameLen] = '\0';
   retTcpPort = ntohs(retTcpPort);
 
-  EXPECT_EQ(retOpCode, REQ);
+  EXPECT_EQ(retOpCode, REG);
   EXPECT_EQ(retSerNameLen, serLen);
   EXPECT_EQ(retTcpPort, r.tcpPort);
   EXPECT_EQ(strcmp(retSerName, (char *)r.serverName), 0);
@@ -57,7 +57,7 @@ TEST(PduCreatorTest, creatingReqPacket){
 }
 
 TEST(PduCreatorTest, creatingReqPacketWithInvalidOpCode){
-  pduReq r;
+  pduReg r;
   size_t bufferSize;
 
   r.opCode = ACK;
@@ -65,7 +65,7 @@ TEST(PduCreatorTest, creatingReqPacketWithInvalidOpCode){
   r.serverName = (uint8_t *)"testHost";
   r.serverNameSize = strlen((char *)r.serverName);
 
-  uint8_t *retVal = pduCreator_req(&r, &bufferSize);
+  uint8_t *retVal = pduCreator_reg(&r, &bufferSize);
 
   EXPECT_TRUE(retVal == NULL);
 }

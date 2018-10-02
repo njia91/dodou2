@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.5)
 project(dodou2)
 
 set(GCC_COVERAGE_COMPILE_FLAGS "-D_POSIX_C_SOURCE=200112L")
@@ -16,7 +16,10 @@ set(UTILS_SOURCE
         utils/pduCreator.c
         utils/sysCall_facade.c
         utils/socketReaderAPI.c
-        utils/list.c)
+        utils/list.c
+        server/serverMain.c
+        server/server.c
+        server/server.h)
 
 set(CMOCKA_SRC lib/cmocka)
 
@@ -73,6 +76,14 @@ add_executable(testPduReader
         utils/pduCreator.c
         utils/test/test_pduReader.cc)
 
+add_executable(server
+        server/serverMain.c
+        server/server.c
+        utils/pduCommon.c
+        utils/pduCreator.c
+        utils/pduReader.c
+        utils/sysCall_facade.c)
+
 
 add_library(UTILS ${UTILS_SOURCE})
 #add_library(CMOCKA SHARED ${CMOCKA_SRC}/src/cmocka.c)
@@ -82,6 +93,7 @@ add_library(UTILS ${UTILS_SOURCE})
 target_link_libraries(testPduCreator ${PThreadLib} ${CMAKE_SOURCE_DIR}/lib/libgtest.a)
 target_link_libraries(testPduReader ${PThreadLib} ${CMAKE_SOURCE_DIR}/lib/libgtest.a)
 target_link_libraries(client ${PThreadLib} ${UTILS})
+target_link_libraries(server ${PThreadLib} ${UTILS})
 target_link_libraries(clientTest ${PThreadLib} ${CMOCKA_SHARED_LIBRARY})
 target_link_libraries(testPduReader ${CMOCKA_SHARED_LIBRARY})
 

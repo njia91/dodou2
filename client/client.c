@@ -97,6 +97,7 @@ int getServerChoiceFromUser(pduSList *pSList, inputArgs *inArgs){
 
   // Frees old port string used to connect to NS
   free(inArgs->port);
+  free(inArgs->ipAdress);
 
   if (pSList->noOfServers == 0){
     fprintf(stderr, "No available or active chat servers on this name-server. Terminating program \n");

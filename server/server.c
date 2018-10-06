@@ -23,7 +23,7 @@ void fillInAddrInfo(struct addrinfo** addrInfo, const int port, const char* IPAd
     struct addrinfo info;
     memset(&info,0,sizeof(info));
     info.ai_family = AF_UNSPEC;
-    info.ai_socktype = SOCK_STREAM;
+    info.ai_socktype = SOCK_DGRAM;
     info.ai_protocol = 0;
     info.ai_flags = flags;
 
@@ -62,39 +62,7 @@ int establishConnectionWithNs(serverInputArgs* args) {
     }
     freeaddrinfo(res);
 
-    return nameserver_fd;/*
-
-
-
-
-    struct addrinfo hints;
-    memset(&hints,0,sizeof(hints));
-    hints.ai_family=AF_UNSPEC;
-    hints.ai_socktype=SOCK_DGRAM;
-    hints.ai_protocol=0;
-    hints.ai_flags=AI_ADDRCONFIG;
-
-    int ret = facade_getAddrinfo((char *) args->nameServerIP, args->nameServerPort, &hints, &res);
-
-    if (ret != 0) {
-        fprintf(stderr, "%s \n",gai_strerror(ret));
-        exit(EXIT_FAILURE);
-    }
-
-    nameserver_fd = facade_createSocket(&res);
-
-    if (nameserver_fd == -1){
-        fprintf(stderr, "Unable to setup socket to nameserver.\n");
-        exit(EXIT_FAILURE);
-    }
-
-    ret = facade_connect(nameserver_fd, &res);
-    if (ret == -1){
-        fprintf(stderr, "Could not connect to NameServer %s \n", strerror(errno));
-    }
-
-    facade_freeaddrinfo(res);
-    return nameserver_fd;*/
+    return nameserver_fd;
 }
 
 void server_main(int argc, char** argv) {
@@ -102,33 +70,50 @@ void server_main(int argc, char** argv) {
 
     parseServerArgs(argc, argv, &args);
 
-    int socket = establishConnectionWithNs(&args);
+    int sock = establishConnectionWithNs(&args);
 
-    fprintf(stdout, "Socket value: %d\n", socket);
+    fprintf(stdout, "Socket value: %d\n", sock);
 
     pduReg registerMessage;
     registerMessage.opCode = REG;
     registerMessage.serverName = (uint8_t*) args.serverName;
     registerMessage.serverNameSize = (uint8_t) strlen(args.serverName);
     registerMessage.tcpPort = (uint16_t) atoi(args.serverPort);
+    registerMessage.ipAddress[0] = 90;
+    registerMessage.ipAddress[1] = 231;
+    registerMessage.ipAddress[2] = 78;
+    registerMessage.ipAddress[3] = 221;
 
     size_t registerBufferSize;
     uint8_t* registerBuffer = pduCreator_reg(&registerMessage, &registerBufferSize);
 
-
     fprintf(stdout, "Sending REG to nameserver (%s) (%d)\n", registerBuffer, (int)registerBufferSize);
-//    facade_write(socket, registerBuffer, registerBufferSize);
-    send(socket, registerBuffer, registerBufferSize, 0);
+    ssize_t res = facade_write(sock, registerBuffer, registerBufferSize);
 
-    fprintf(stdout, "Receiving ACK from nameserver... ");
+    fprintf(stdout, "Sent %d number of bytes to the server\n", (int)res);
 
-    char buffer[1024] = {0};
-    ssize_t valread = read(socket, buffer, 1024);
-    //genericPdu* ackData = getDataFromSocket(socket);
+    bool running = true;
+    while (running) {
+        fprintf(stdout, "Receiving ACK from nameserver...\n");
+        genericPdu* data = getUdpDataFromSocket(sock);
 
-   // if (ackData->opCode == ACK) {
-     //   fprintf(stdout, "Success!!\n");
+        if (data->opCode == ACK) {
+            pduAck *ack = (pduAck *) data;
+            fprintf(stdout, "Success!!%d\n", ack->id);
 
-    //}
+            pduAlive aliveMessage;
+            aliveMessage.opCode = ALIVE;
+            aliveMessage.noOfClients = 0;
+            aliveMessage.id = ack->id;
 
+            size_t aliveBufferSize;
+            uint8_t *aliveBuffer = pduCreator_alive(&aliveMessage, &aliveBufferSize);
+
+            sleep(8);
+            fprintf(stdout, "Sending ALIVE to nameserver\n");
+            ssize_t res = facade_write(sock, aliveBuffer, aliveBufferSize);
+        } else {
+            running = false;
+        }
+    }
 }

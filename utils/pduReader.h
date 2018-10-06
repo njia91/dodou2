@@ -7,7 +7,7 @@
 
 #include "pduCommon.h"
 #include "sysCall_facade.h"
-
+genericPdu *getUdpDataFromSocket(int socket_fd);
 genericPdu * getDataFromSocket(int socket_fd);
 
 //Server-nameserver interaction
@@ -16,7 +16,7 @@ pduReg *pduReader_req(int socket_fd);
 pduAlive *pduReader_alive(int socket_fd);
 
 //Client-nameserver interaction
-pduAck *pduReader_ack(int socket_fd);
+pduAck *pduReader_ack(uint8_t* buffer);
 
 pduSList *pduReader_SList(int socket_fd);
 

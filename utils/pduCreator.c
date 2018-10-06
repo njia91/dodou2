@@ -9,7 +9,7 @@ uint8_t *pduCreator_reg(pduReg *reg, size_t *nByte) {
     return NULL;
   }
 
-  size_t packetSize =  WORD_SIZE + reg->serverNameSize;
+  size_t packetSize =  (WORD_SIZE * 2) + reg->serverNameSize;
   size_t noOfWords = calculateNoOfWords(packetSize);
   *nByte = (noOfWords * WORD_SIZE);
   uint16_t u16;
@@ -20,7 +20,8 @@ uint8_t *pduCreator_reg(pduReg *reg, size_t *nByte) {
   memcpy(pduBuffer, &(reg->opCode), sizeof(uint8_t));
   memcpy(pduBuffer + BYTE_SIZE, &(reg->serverNameSize), sizeof(uint8_t));
   memcpy(pduBuffer + (2 * BYTE_SIZE), &u16, sizeof(uint16_t));
-  memcpy(pduBuffer + WORD_SIZE, reg->serverName, reg->serverNameSize);
+  memcpy(pduBuffer + WORD_SIZE, &(reg->ipAddress[0]), sizeof(uint8_t) * 4);
+  memcpy(pduBuffer + (WORD_SIZE * 2), reg->serverName, reg->serverNameSize);
 
   return pduBuffer;
 } 

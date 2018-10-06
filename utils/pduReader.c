@@ -14,6 +14,56 @@
 
 // TODO Check return values from read() and calloc().
 
+genericPdu *getUdpDataFromSocket(int socket_fd) {
+  genericPdu *pdu = NULL;
+
+  uint8_t opCode = 0;
+  uint8_t buffer[4];
+
+  ssize_t ret = facade_read(socket_fd, &buffer, 4);
+  opCode = buffer[0];
+
+  printf("WE GOT THIS OP CODE BACK %u   Size %zd\n", opCode, ret);
+
+  if (ret == 0){
+    fprintf(stderr, "%s: Could not read data from Socket\n.", __func__);
+    return NULL;
+  } else if (ret == -1){
+    fprintf(stderr, "%s: %s \n",__func__, strerror(errno));
+  }
+  
+  if(opCode == SLIST){
+    pdu = (genericPdu *) pduReader_SList(socket_fd);
+  } else if (opCode == REG){
+    pdu = (genericPdu *) pduReader_req(socket_fd);
+  } else if (opCode == ACK){
+    pdu = (genericPdu *) pduReader_ack(buffer);
+  }  else if (opCode == JOIN){
+    pdu = (genericPdu *) pduReader_join(socket_fd);
+  }  else if (opCode == PJOIN) {
+    pdu = (genericPdu *) pduReader_pJoin(socket_fd);
+  } else if (opCode == GETLIST){
+    pdu = calloc(sizeof(pduGetList), 1);
+    pdu->opCode = GETLIST;
+  } else if (opCode == PARTICIPANTS){
+    pdu = (genericPdu *) pduReader_participants(socket_fd);
+  } else if (opCode == MESS){
+    pdu = (genericPdu *) pduReader_mess(socket_fd);
+  } else if (opCode == QUIT){
+    pdu = (genericPdu *)calloc(sizeof(pduQuit), 1);
+    pdu->opCode = QUIT;
+  } else if (opCode == PLEAVE){
+    pdu = (genericPdu *) pduReader_pLeave(socket_fd);
+  } else if (opCode == ALIVE){
+    fprintf(stderr, "Received ALIAVE PDU! wtf?\n");
+  } else if (opCode == NOTREQ){
+    fprintf(stderr, "Received NOTREQ PDU! \n");
+  }
+
+
+  return pdu;
+}
+
 genericPdu *getDataFromSocket(int socket_fd) {
   genericPdu *pdu = NULL;
 
@@ -35,8 +85,6 @@ genericPdu *getDataFromSocket(int socket_fd) {
     pdu = (genericPdu *) pduReader_SList(socket_fd);
   } else if (opCode == REG){
     pdu = (genericPdu *) pduReader_req(socket_fd);
-  } else if (opCode == ACK){
-    pdu = (genericPdu *) pduReader_ack(socket_fd);
   }  else if (opCode == JOIN){
     pdu = (genericPdu *) pduReader_join(socket_fd);
   }  else if (opCode == PJOIN) {
@@ -91,19 +139,16 @@ pduReg *pduReader_req(int socket_fd){
   return p;
 }
 
-pduAck *pduReader_ack(int socket_fd){
+pduAck *pduReader_ack(uint8_t* buffer){
   pduAck *p = calloc(sizeof(pduReg), 1);
   p->opCode = ACK;
-  uint8_t buffer[WORD_SIZE];
 
-  facade_read(socket_fd, buffer, 3 * BYTE_SIZE);
-
-  if (buffer[0] != 0){
+  if (buffer[1] != 0){
     fprintf(stderr, "Invalid padding for ACK Packet %d\n", buffer[0]);
     return NULL;
   }
 
-  memcpy(&p->id, buffer +  BYTE_SIZE, sizeof(uint16_t));
+  memcpy(&p->id, buffer + 2 * BYTE_SIZE, sizeof(uint16_t));
   p->id = ntohs(p->id);
   return p;
 }

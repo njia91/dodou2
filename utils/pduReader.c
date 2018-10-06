@@ -17,13 +17,11 @@
 genericPdu *getUdpDataFromSocket(int socket_fd) {
   genericPdu *pdu = NULL;
 
-  uint8_t opCode = 0;
-  uint8_t buffer[4];
+  uint8_t buffer[WORD_SIZE];
+  ssize_t ret = facade_read(socket_fd, &buffer, WORD_SIZE);
+  uint8_t opCode = buffer[0];
 
-  ssize_t ret = facade_read(socket_fd, &buffer, 4);
-  opCode = buffer[0];
-
-  printf("WE GOT THIS OP CODE BACK %u   Size %zd\n", opCode, ret);
+  //printf("WE GOT THIS OP CODE BACK %u   Size %zd\n", opCode, ret);
 
   if (ret == 0){
     fprintf(stderr, "%s: Could not read data from Socket\n.", __func__);
@@ -32,34 +30,14 @@ genericPdu *getUdpDataFromSocket(int socket_fd) {
     fprintf(stderr, "%s: %s \n",__func__, strerror(errno));
   }
   
-  if(opCode == SLIST){
-    pdu = (genericPdu *) pduReader_SList(socket_fd);
-  } else if (opCode == REG){
-    pdu = (genericPdu *) pduReader_req(socket_fd);
-  } else if (opCode == ACK){
-    pdu = (genericPdu *) pduReader_ack(buffer);
-  }  else if (opCode == JOIN){
-    pdu = (genericPdu *) pduReader_join(socket_fd);
-  }  else if (opCode == PJOIN) {
-    pdu = (genericPdu *) pduReader_pJoin(socket_fd);
-  } else if (opCode == GETLIST){
-    pdu = calloc(sizeof(pduGetList), 1);
-    pdu->opCode = GETLIST;
-  } else if (opCode == PARTICIPANTS){
-    pdu = (genericPdu *) pduReader_participants(socket_fd);
-  } else if (opCode == MESS){
-    pdu = (genericPdu *) pduReader_mess(socket_fd);
-  } else if (opCode == QUIT){
-    pdu = (genericPdu *)calloc(sizeof(pduQuit), 1);
-    pdu->opCode = QUIT;
-  } else if (opCode == PLEAVE){
-    pdu = (genericPdu *) pduReader_pLeave(socket_fd);
-  } else if (opCode == ALIVE){
-    fprintf(stderr, "Received ALIAVE PDU! wtf?\n");
-  } else if (opCode == NOTREQ){
-    fprintf(stderr, "Received NOTREQ PDU! \n");
+  if (opCode == ACK) {
+    pdu = (genericPdu*) pduReader_ack(buffer);
+  } else if (opCode == NOTREQ) {
+    pdu = (genericPdu*) pduReader_notReg(buffer);
+  } else {
+    fprintf(stderr, "Received unknown message with opCode:%d\n", opCode);
+    return NULL;
   }
-
 
   return pdu;
 }
@@ -83,8 +61,6 @@ genericPdu *getDataFromSocket(int socket_fd) {
 
   if(opCode == SLIST){
     pdu = (genericPdu *) pduReader_SList(socket_fd);
-  } else if (opCode == REG){
-    pdu = (genericPdu *) pduReader_req(socket_fd);
   }  else if (opCode == JOIN){
     pdu = (genericPdu *) pduReader_join(socket_fd);
   }  else if (opCode == PJOIN) {
@@ -112,33 +88,6 @@ genericPdu *getDataFromSocket(int socket_fd) {
 }
 
 //Server-nameserver interaction
-pduReg *pduReader_req(int socket_fd){
-  pduReg *p = calloc(sizeof(pduReg), 1);
-  uint8_t buffer[WORD_SIZE];
-  p->opCode = REG;
-  int offset = 0;
-  facade_read(socket_fd, buffer, 3 * BYTE_SIZE);
-
-  memcpy(&p->serverNameSize, buffer, sizeof(uint8_t));
-  memcpy(&p->tcpPort, buffer + BYTE_SIZE, sizeof(uint16_t));
-
-  p->serverName = calloc(sizeof(uint8_t), p->serverNameSize + 1);
-
-  for (int i = 0; i < calculateNoOfWords(p->serverNameSize); i++){
-    memset(buffer, 0, WORD_SIZE);
-    facade_read(socket_fd, buffer, WORD_SIZE);
-    // The null-terminator indicates end of of message.
-    for (int k = 0;  k < WORD_SIZE && buffer[k] != '\0'; k++){
-      p->serverName[offset] = buffer[k];
-      offset++;
-    }
-  }
-  p->serverName[p->serverNameSize] = '\0';
-  p->tcpPort = ntohs(p->tcpPort);
-
-  return p;
-}
-
 pduAck *pduReader_ack(uint8_t* buffer){
   pduAck *p = calloc(sizeof(pduReg), 1);
   p->opCode = ACK;
@@ -148,13 +97,26 @@ pduAck *pduReader_ack(uint8_t* buffer){
     return NULL;
   }
 
-  memcpy(&p->id, buffer + 2 * BYTE_SIZE, sizeof(uint16_t));
+  memcpy(&p->id, buffer + (2 * BYTE_SIZE), sizeof(uint16_t));
+  p->id = ntohs(p->id);
+  return p;
+}
+
+pduNotReq *pduReader_notReg(uint8_t* buffer) {
+  pduNotReq *p = calloc(sizeof(pduNotReq), 1);
+  p->opCode = NOTREQ;
+
+  if (buffer[1] != 0) {
+    fprintf(stderr, "Invalid padding for NOTREG Packet %d\n", buffer[0]);
+    return NULL;
+  }
+
+  memcpy(&p->id, buffer + (2 * BYTE_SIZE), sizeof(uint16_t));
   p->id = ntohs(p->id);
   return p;
 }
 
 //Client-nameserver interaction
-
 pduSList *pduReader_SList(int socket_fd){
 
   pduSList *p = (pduSList *) calloc(sizeof(pduSList), 1);

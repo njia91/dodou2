@@ -16,10 +16,7 @@ set(UTILS_SOURCE
         utils/pduCreator.c
         utils/sysCall_facade.c
         utils/socketReaderAPI.c
-        utils/list.c
-        server/serverMain.c
-        server/server.c
-        server/server.h)
+        utils/list.c)
 
 set(CMOCKA_SRC lib/cmocka)
 
@@ -28,6 +25,7 @@ include_directories(lib/googletest/include lib/googletest/src)
 include_directories(lib)
 include_directories(utils)
 include_directories(client)
+include_directories(server)
 include_directories(client/test)
 include_directories(lib/cmocka/include)
 include_directories(lib/cmocka/build/src)
@@ -68,7 +66,7 @@ add_executable(clientTest
         utils/mocks/sysCall_facadeMock.c
         utils/mocks/pduReaderMock.c
         utils/socketReaderAPI.c
-        client/test/ThreadingSolution.h)
+        client/test/ThreadingSolution.h server/helpers.c server/helpers.h)
 
 add_executable(testPduReader
         utils/pduCommon.c
@@ -77,12 +75,17 @@ add_executable(testPduReader
         utils/test/test_pduReader.cc)
 
 add_executable(server
-        server/serverMain.c
-        server/server.c
         utils/pduCommon.c
         utils/pduCreator.c
         utils/pduReader.c
-        utils/sysCall_facade.c)
+        utils/sysCall_facade.c
+        server/helpers.c
+        server/helpers.h
+        server/nameServerConnection.c
+        server/nameServerConnection.h
+        server/server.c
+        server/server.h
+        server/serverMain.c)
 
 
 add_library(UTILS ${UTILS_SOURCE})

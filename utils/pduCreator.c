@@ -26,6 +26,8 @@ uint8_t *pduCreator_reg(pduReg *reg, size_t *nByte) {
   return pduBuffer;
 } 
 
+
+
 uint8_t *pduCreator_alive(pduAlive *alive, size_t *nByte) {
 
   if(alive->opCode != ALIVE){

@@ -14,12 +14,11 @@ genericPdu * getDataFromSocket(int socket_fd) {
 }
 
 //Server-nameserver interaction
-pduReg *pduReader_req(int socket_fd);
-
+pduAck *pduReader_ack(uint8_t* buffer);
+pduReg *pduReader_reg(uint8_t* buffer);
 pduAlive *pduReader_alive(int socket_fd);
 
 //Client-nameserver interaction
-pduAck *pduReader_ack(int socket_fd);
 
 pduSList *pduReader_SList(int socket_fd){
   return (pduSList *)mock();

@@ -64,7 +64,13 @@ TEST_F(PduReaderTest, read_reqPacket){
   uint8_t *retVal = pduCreator_reg(&r, &bufferSize);
   globalBuffer = retVal + 1;
 
-  pduReg *ret = pduReader_req(4);
+  uint8_t buffer[4];
+  buffer[0] = 4;
+  buffer[1] = 0;
+  buffer[2] = 1;
+  buffer[3] = 1;
+
+  pduReg *ret = NULL;//pduReader_reg(buffer);
 
   EXPECT_EQ(ret->opCode, REG);
   EXPECT_EQ(ret->serverNameSize, serLen);
@@ -91,7 +97,11 @@ TEST_F(PduReaderTest, read_ackPacket){
 
   globalBuffer = retVal + 1;
 
-  pduAck *ret = pduReader_ack(4);
+  uint8_t buffer[4];
+  buffer[1] = 0;
+  buffer[2] = 0;
+  buffer[3] = 1;
+  pduAck *ret = pduReader_ack(buffer);
 
   EXPECT_EQ(ret->opCode, ACK);
   EXPECT_EQ(ret->id, r.id);

@@ -8,7 +8,7 @@
 
 #include "helpers.h"
 
-int establishConnectionWithNs(serverInputArgs *args);
+int establishConnectionWithNs(serverInputArgs args);
 
 void registerToServer(int sock, serverInputArgs args);
 bool gotACKResponse(int nameServerSocket);

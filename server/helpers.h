@@ -15,6 +15,6 @@ typedef struct {
     char* nameServerPort;
 } serverInputArgs;
 
-void fillInAddrInfo(struct addrinfo** addrInfo, const int port, const char* IPAddress, int flags);
+void fillInAddrInfo(struct addrinfo **addrInfo, const int port, const char *IPAddress, int socketType, int flags);
 
 #endif //DODOU2_HELPERS_H

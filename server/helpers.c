@@ -1,12 +1,12 @@
 #include "helpers.h"
 
-void fillInAddrInfo(struct addrinfo** addrInfo, const int port, const char* IPAddress, int flags) {
+void fillInAddrInfo(struct addrinfo **addrInfo, const int port, const char *IPAddress, int socketType, int flags) {
     char portId[15];
     sprintf(portId, "%d", port);
     struct addrinfo info;
     memset(&info,0,sizeof(info));
     info.ai_family = AF_UNSPEC;
-    info.ai_socktype = SOCK_DGRAM;
+    info.ai_socktype = socketType;
     info.ai_protocol = 0;
     info.ai_flags = flags;
 

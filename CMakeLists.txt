@@ -79,13 +79,17 @@ add_executable(server
         utils/pduCreator.c
         utils/pduReader.c
         utils/sysCall_facade.c
+        utils/socketReaderAPI.c
+        utils/socketReaderAPI.h
         server/helpers.c
         server/helpers.h
         server/nameServerConnection.c
         server/nameServerConnection.h
         server/server.c
         server/server.h
-        server/serverMain.c)
+        server/serverMain.c
+        server/clientConnection.c
+        server/clientConnection.h)
 
 
 add_library(UTILS ${UTILS_SOURCE})

@@ -1,10 +1,10 @@
 #include "nameServerConnection.h"
 
-int establishConnectionWithNs(serverInputArgs* args) {
+int establishConnectionWithNs(serverInputArgs args) {
     int nameServer_fd = 0;
     struct addrinfo* res = 0;
 
-    fillInAddrInfo(&res, atoi(args->nameServerPort), args->nameServerIP, AI_ADDRCONFIG);
+    fillInAddrInfo(&res, atoi(args.nameServerPort), args.nameServerIP, SOCK_DGRAM, AI_ADDRCONFIG);
 
     nameServer_fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
     if (nameServer_fd == -1) {

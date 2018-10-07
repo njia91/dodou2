@@ -1,11 +1,16 @@
 #include "pduCommon.h"
 
 uint8_t calculateCheckSum(void *p, size_t size) {
-  uint8_t ch = 0;
+  uint16_t ch = 0;
   for(int i = 0; i < size; i++){
     ch += *(uint8_t *)p++;
   }
-  return ch;
+
+  while (ch > UINT8_MAX) {
+    fprintf(stdout, "Wraparound\n");
+    ch -= 255;
+  }
+  return (uint8_t) ch;
 }
 
 size_t calculateNoOfWords(size_t packetSize){

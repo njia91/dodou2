@@ -274,7 +274,7 @@ pduMess *pduReader_mess(int socket_fd){
   uint8_t buffer[WORD_SIZE];
   int offset = 0;
   uint8_t givenCheckSum = 0;
-  uint8_t calculatedChecksum = p->opCode;
+  uint16_t calculatedChecksum = p->opCode;
 
   facade_read(socket_fd, buffer, 3 * BYTE_SIZE);
   calculatedChecksum += calculateCheckSum((void *) buffer, 3 * BYTE_SIZE);
@@ -332,6 +332,10 @@ pduMess *pduReader_mess(int socket_fd){
     }
   }
   p->id[p->idSize] = '\0';
+
+  while (calculatedChecksum > UINT8_MAX) {
+    calculatedChecksum -= 255;
+  }
 
   if(calculatedChecksum == UINT8_MAX){
     p->isCheckSumOk = true;

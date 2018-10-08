@@ -7,7 +7,6 @@ uint8_t calculateCheckSum(void *p, size_t size) {
   }
 
   while (ch > UINT8_MAX) {
-    fprintf(stdout, "Wraparound\n");
     ch -= 255;
   }
   return (uint8_t) ch;

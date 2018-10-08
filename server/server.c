@@ -1,7 +1,4 @@
-#include <pthread.h>
-#include <socketReaderAPI.h>
 #include "server.h"
-#include "clientConnection.h"
 
 void parseServerArgs(int argc, char **argv, serverInputArgs *args) {
   if (argc <= 4) {
@@ -19,72 +16,44 @@ void parseServerArgs(int argc, char **argv, serverInputArgs *args) {
   memcpy(args->nameServerPort, argv[4], PORT_LENGTH - 1);
 }
 
-void *setupClientThread(void *args) {
-  serverInputArgs inputArgs = *((serverInputArgs*) args);
+bool processSocketData(int socket_fd, void *args) {
+  bool allOk = true;
+  serverData *sData = (serverData *)args;
 
-
-  int server_fd = setupServerSocket(inputArgs);
-
-  int epoll_fd = epoll_create1(0);
-
-  // Setup Epoll
-  struct epoll_event ev_server;
-  ev_server.data.fd = server_fd;
-  ev_server.events = EPOLLIN | EPOLLONESHOT;
-  facade_epoll_ctl(epoll_fd, EPOLL_CTL_ADD, server_fd, &ev_server);
-
-  if (epoll_fd == -1) {
-    fprintf(stderr,"Failed to create epoll FD -  %s\n", strerror(errno));
-    exit(EXIT_FAILURE);
-  }
-
-  facade_setToNonBlocking(server_fd);
-
-  struct epoll_event events[MAX_EVENTS];
-  struct epoll_event ev;
-  bool isSessionActive = true;
-  int availFds;
-  int numOfActiveFds = 1;
-
-  while (isSessionActive) {
-
-    fprintf(stdout, "Waiting for epoll...\n");
-    availFds = facade_epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
-    if (availFds == -1) {
-      fprintf(stderr, "%s: ",__func__);
-      perror("epoll_wait: ");
-      isSessionActive = false;
-    } else if (availFds == 0) { // Probably interrupted with a signal.
-      fprintf(stderr, "%s: epoll_wait timed out with no readable FDs. Terminating. \n",__func__);
-      isSessionActive = false;
+  if (socket_fd == sData->server_fd) {
+    // Server socket
+    fprintf(stdout, "ServerFD have info...\n");
+    int client_fd = listenForIncomingConnection(socket_fd);
+    facade_setToNonBlocking(client_fd);
+    fprintf(stdout, "ServerFD info read, new socket created:%d\n", client_fd);
+    // Add Client
+    struct epoll_event ev_client;
+    ev_client.data.fd = client_fd;
+    ev_client.events = EPOLLIN | EPOLLONESHOT;
+    int result = facade_epoll_ctl(sData->epoll_fd, EPOLL_CTL_ADD, client_fd, &ev_client);
+    fprintf(stdout, "Added client to epoll: %d\n", result);
+  } else {
+    // Client socket
+    genericPdu *p = getDataFromSocket(socket_fd);
+    if (p == NULL){
+      return false;
     }
 
-    fprintf(stdout, "Found epoll\n");
-    for (int i = 0; i < availFds; i++) {
-      if ((events[i].events & EPOLLRDHUP) || (events[i].events & EPOLLERR)) {
-        fprintf(stderr, "%s: Socket has shutdown by peer or due to error. \n", __func__);
-        closeAndRemoveFD(epoll_fd, events[i].data.fd);
-        numOfActiveFds--;
-      } else if ((events[i].events & EPOLLIN)) {
-        fprintf(stdout, "Found something in epoll\n");
-        //isSessionActive = rInfo->func(events[i].data.fd, rInfo->args);
-        if (isSessionActive) {
-          ev.data.fd = events[i].data.fd;
-          ev.events = EPOLLIN | EPOLLONESHOT;
-          if (facade_epoll_ctl(epoll_fd, EPOLL_CTL_MOD, events[i].data.fd, &ev) == -1) {
-            fprintf(stderr, "%s: epoll_ctl failed. Errno: %s \n", __func__, strerror(errno));
-          }
-          facade_epoll_ctl(epoll_fd, EPOLL_CTL_MOD, events[i].data.fd, &ev);
-        }
-      } else {
-        fprintf(stderr, "%s: Unknown EPOLL EVENT %d  \n", __func__, events[i].events);
-        closeAndRemoveFD(epoll_fd, events[i].data.fd);
-        numOfActiveFds--;
-      }
+    if (p->opCode == JOIN) {
+      pduJoin *join = (pduJoin *)p;
+      fprintf(stdout, "Client ID length: %d\n", join->idSize);
+      char* clientID = calloc(join->idSize, sizeof(char));
+      memcpy(clientID, join->id, join->idSize);
+      fprintf(stdout, "Client ID: %s\n", clientID);
+      free(clientID);
+
+      // TODO: save client
+
+      // TODO: send PARTICIPANTS
+
     }
 
-    fprintf(stdout, "ClientThread\n");
-    sleep(1);
+    fprintf(stdout, "OP Code from client: %d\n", p->opCode);
   }
 }
 
@@ -99,8 +68,34 @@ void server_main(int argc, char **argv) {
 
   registerToServer(nameServerSocket, args);
 
+
+  int epoll_fd = epoll_create1(0);
+
+
+  int server_fd = setupServerSocket(args);
+
+  // Setup Epoll and add server
+  struct epoll_event ev_server;
+  ev_server.data.fd = server_fd;
+  ev_server.events = EPOLLIN | EPOLLONESHOT;
+  facade_epoll_ctl(epoll_fd, EPOLL_CTL_ADD, server_fd, &ev_server);
+
+
+  facade_setToNonBlocking(server_fd);
+
+  serverData sData;
+  sData.server_fd = server_fd;
+  sData.numOfActiveFds = 1; // Just the server
+  sData.epoll_fd = epoll_fd;
+
+  readerInfo rInfo;
+  rInfo.args = &sData;
+  rInfo.epoll_fd = epoll_fd;
+  rInfo.func = processSocketData;
+  rInfo.numOfActiveFds = 1; // Only counting the Server socket.
+
   pthread_t receivingThread;
-  int ret = pthread_create(&receivingThread, NULL, setupClientThread, (void *)&args);
+  int ret = pthread_create(&receivingThread, NULL, waitForIncomingMessages, (void *)&rInfo);
   if (ret){
     fprintf(stderr, "Unable to create a pthread. Error: %d\n", ret);
   }

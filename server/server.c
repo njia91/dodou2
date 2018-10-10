@@ -1,5 +1,10 @@
 #include "server.h"
 
+
+void freeParticipant(void *id) {
+  free((char *)id);
+}
+
 void parseServerArgs(int argc, char **argv, serverInputArgs *args) {
   if (argc <= 4) {
     fprintf(stderr, "Too few or too many Arguments \n"
@@ -45,15 +50,36 @@ bool processSocketData(int socket_fd, void *args) {
       char* clientID = calloc(join->idSize, sizeof(char));
       memcpy(clientID, join->id, join->idSize);
       fprintf(stdout, "Client ID: %s\n", clientID);
-      free(clientID);
+
+      pduParticipants participants;
+      participants.ids = calloc(1, sizeof(char *));
+      participants.ids[0] = calloc(1, sizeof(char) * strlen(clientID));
+      memcpy(participants.ids[0], clientID, strlen(clientID));
+      participants.noOfIds = 1;
+      participants.opCode = PARTICIPANTS;
+
 
       // TODO: save client
+      //dll_insert(clientID, 0, participantsList);
 
-      // TODO: send PARTICIPANTS
+      // Send participants list to client
+      size_t dataSize;
+      uint8_t *data = pduCreator_participants(&participants, &dataSize);
+      facade_write(socket_fd, data, dataSize);
 
+
+      free(participants.ids[0]);
+      free(participants.ids);
+      free(clientID);
+    } else if (p->opCode == MESS) {
+      fprintf(stdout, "Received a message\n");
+      // TODO: Implement message handling
+    } else if (p->opCode == PLEAVE) {
+      fprintf(stdout, "Participant leaved\n");
+      // TODO: Implement leaving handling
+    } else {
+      fprintf(stderr, "Received unhandled message with OP Code: %d\n", p->opCode);
     }
-
-    fprintf(stdout, "OP Code from client: %d\n", p->opCode);
   }
 }
 
@@ -68,9 +94,11 @@ void server_main(int argc, char **argv) {
 
   registerToServer(nameServerSocket, args);
 
+  participantsList = dll_empty();
+  dll_setMemoryHandler(participantsList, &freeParticipant);
+
 
   int epoll_fd = epoll_create1(0);
-
 
   int server_fd = setupServerSocket(args);
 

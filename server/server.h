@@ -8,6 +8,7 @@
 #include "pduReader.h"
 #include "nameServerConnection.h"
 #include "helpers.h"
+#include "list.h"
 
 typedef struct {
   int commonEventFd;
@@ -16,6 +17,9 @@ typedef struct {
   int server_fd;
   int epoll_fd;
 } serverData;
+
+dll *participantsList;
+void freeParticipant(void *id);
 
 void parseServerArgs(int argc, char **argv, serverInputArgs *args);
 

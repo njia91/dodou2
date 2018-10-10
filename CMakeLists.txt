@@ -81,6 +81,8 @@ add_executable(server
         utils/sysCall_facade.c
         utils/socketReaderAPI.c
         utils/socketReaderAPI.h
+        utils/list.c
+        utils/list.h
         server/helpers.c
         server/helpers.h
         server/nameServerConnection.c

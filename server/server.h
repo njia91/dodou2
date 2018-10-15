@@ -19,6 +19,7 @@ typedef struct {
 } serverData;
 
 dll *participantsList;
+
 void freeParticipant(void *id);
 
 void parseServerArgs(int argc, char **argv, serverInputArgs *args);

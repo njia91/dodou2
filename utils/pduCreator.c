@@ -110,7 +110,7 @@ uint8_t *pduCreator_participants(pduParticipants *par, size_t *nByte) {
     dataSize += strlen((char *)par->ids[i]) + 1;
   }
 
-  size_t packetSize = (2 * WORD_SIZE) + dataSize;
+  size_t packetSize = WORD_SIZE + dataSize;
   size_t noOfWords = calculateNoOfWords(packetSize);
   *nByte = noOfWords * WORD_SIZE;
 

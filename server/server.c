@@ -1,6 +1,5 @@
 #include "server.h"
 
-
 void freeParticipant(void *id) {
   free((char *)id);
 }
@@ -36,7 +35,8 @@ bool processSocketData(int socket_fd, void *args) {
     ev_client.data.fd = client_fd;
     ev_client.events = EPOLLIN | EPOLLONESHOT;
     int result = facade_epoll_ctl(sData->epoll_fd, EPOLL_CTL_ADD, client_fd, &ev_client);
-    fprintf(stdout, "Added client to epoll: %d\n", result);
+    sData->numOfActiveFds++;
+    fprintf(stdout, "Added client to epoll: %d, numberOfEpoll:%d\n", client_fd, sData->numOfActiveFds);
   } else {
     // Client socket
     genericPdu *p = getDataFromSocket(socket_fd);
@@ -45,26 +45,25 @@ bool processSocketData(int socket_fd, void *args) {
     }
 
     if (p->opCode == JOIN) {
+      fprintf(stdout, "Received JOIN message\n");
       pduJoin *join = (pduJoin *)p;
-      fprintf(stdout, "Client ID length: %d\n", join->idSize);
       char* clientID = calloc(join->idSize, sizeof(char));
       memcpy(clientID, join->id, join->idSize);
-      fprintf(stdout, "Client ID: %s\n", clientID);
 
       pduParticipants participants;
       participants.ids = calloc(1, sizeof(char *));
-      participants.ids[0] = calloc(1, sizeof(char) * strlen(clientID));
+      participants.ids[0] = calloc(strlen(clientID), sizeof(char));
       memcpy(participants.ids[0], clientID, strlen(clientID));
       participants.noOfIds = 1;
       participants.opCode = PARTICIPANTS;
 
+      // TODO: save client in list
 
-      // TODO: save client
-      //dll_insert(clientID, 0, participantsList);
 
       // Send participants list to client
       size_t dataSize;
       uint8_t *data = pduCreator_participants(&participants, &dataSize);
+      fprintf(stdout, "Sending participants\n");
       facade_write(socket_fd, data, dataSize);
 
 
@@ -73,10 +72,17 @@ bool processSocketData(int socket_fd, void *args) {
       free(clientID);
     } else if (p->opCode == MESS) {
       fprintf(stdout, "Received a message\n");
+      pduMess *mess = (pduMess *)p;
       // TODO: Implement message handling
     } else if (p->opCode == PLEAVE) {
       fprintf(stdout, "Participant leaved\n");
+      pduPLeave *leave = (pduPLeave *)p;
       // TODO: Implement leaving handling
+
+      // Remove from list
+
+      // Notify others
+
     } else {
       fprintf(stderr, "Received unhandled message with OP Code: %d\n", p->opCode);
     }

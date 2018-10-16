@@ -18,6 +18,14 @@ typedef struct {
   int epoll_fd;
 } serverData;
 
+typedef struct {
+  char *clientID;
+  int socket_fd;
+} participant;
+
+participant participantList[200];
+uint8_t currentFreeParticipantSpot;
+
 dll *participantsList;
 
 void freeParticipant(void *id);

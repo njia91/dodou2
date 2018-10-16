@@ -50,21 +50,54 @@ bool processSocketData(int socket_fd, void *args) {
       char* clientID = calloc(join->idSize, sizeof(char));
       memcpy(clientID, join->id, join->idSize);
 
+      participant par;
+      par.clientID = calloc(strlen(clientID), sizeof(char));
+      memcpy(par.clientID, clientID, strlen(clientID));
+      par.socket_fd = socket_fd;
+
+      fprintf(stdout, "%s added to participants\n", par.clientID);
+      participantList[currentFreeParticipantSpot] = par;
+      currentFreeParticipantSpot++;
+
+
+      uint8_t numberOfParticipants = (uint8_t)(currentFreeParticipantSpot - 1);
       pduParticipants participants;
-      participants.ids = calloc(1, sizeof(char *));
-      participants.ids[0] = calloc(strlen(clientID), sizeof(char));
-      memcpy(participants.ids[0], clientID, strlen(clientID));
-      participants.noOfIds = 1;
       participants.opCode = PARTICIPANTS;
-
-      // TODO: save client in list
-
+      participants.ids = calloc(numberOfParticipants, sizeof(char *));
+      participants.noOfIds = numberOfParticipants;
+      for (uint8_t i = 0; i < currentFreeParticipantSpot; i++) {
+        participants.ids[i] = calloc(strlen(participantList[i].clientID), sizeof(char));
+        memcpy(participants.ids[i], participantList[i].clientID, strlen(participantList[i].clientID));
+      }
 
       // Send participants list to client
       size_t dataSize;
       uint8_t *data = pduCreator_participants(&participants, &dataSize);
       fprintf(stdout, "Sending participants\n");
       facade_write(socket_fd, data, dataSize);
+      free(data);
+
+
+      pduPJoin pJoin;
+      pJoin.opCode = PJOIN;
+      pJoin.idSize = (uint8_t) strlen(clientID);
+      pJoin.id = calloc(pJoin.idSize, sizeof(char));
+      memcpy(pJoin.id, clientID, pJoin.idSize);
+      struct timeval time;
+      gettimeofday(&time, NULL);
+      pJoin.timeStamp = (uint32_t) time.tv_usec;
+
+      size_t bufferSize;
+      uint8_t *buffer = pduCreator_pJoin(&pJoin, &bufferSize);
+
+      for (uint8_t i = 0; i < currentFreeParticipantSpot; i++) {
+        if (socket_fd != participantList[i].socket_fd) {
+          facade_write(participantList[i].socket_fd, buffer, bufferSize);
+        }
+      }
+
+      free(pJoin.id);
+      free(buffer);
 
 
       free(participants.ids[0]);
@@ -73,19 +106,70 @@ bool processSocketData(int socket_fd, void *args) {
     } else if (p->opCode == MESS) {
       fprintf(stdout, "Received a message\n");
       pduMess *mess = (pduMess *)p;
-      // TODO: Implement message handling
-    } else if (p->opCode == PLEAVE) {
-      fprintf(stdout, "Participant leaved\n");
-      pduPLeave *leave = (pduPLeave *)p;
-      // TODO: Implement leaving handling
 
-      // Remove from list
+      for (int i = 0; i < currentFreeParticipantSpot; i++) {
+        if (socket_fd == participantList[i].socket_fd) {
+          mess->idSize = (uint8_t) strlen(participantList[i].clientID);
+          mess->id = calloc(mess->idSize, sizeof(char));
+          memcpy(mess->id, participantList[i].clientID, mess->idSize);
+          struct timeval time;
+          gettimeofday(&time, NULL);
+          mess->timeStamp = (uint32_t) time.tv_usec;
+        }
+      }
 
-      // Notify others
+      size_t bufferSize;
+      uint8_t *buffer = pduCreator_mess(mess, &bufferSize);
+
+      for (int i = 0; i < currentFreeParticipantSpot; i++) {
+        if (socket_fd != participantList[i].socket_fd) {
+          fprintf(stdout, "Sending message to %s\n", participantList[i].clientID);
+          facade_write(socket_fd, buffer, bufferSize);
+        } else {
+          fprintf(stdout, "Skipping sender %s\n", participantList[i].clientID);
+        }
+      }
+
+      free(buffer);
+
+    } else if (p->opCode == QUIT) {
+      pduPLeave leave;
+      leave.opCode = PLEAVE;
+      struct timeval time;
+      gettimeofday(&time, NULL);
+      leave.timeStamp = (uint32_t) time.tv_usec;
+
+      for (int i = 0; i < currentFreeParticipantSpot; i++) {
+        if (socket_fd == participantList[i].socket_fd) {
+          fprintf(stdout, "%s have left the chat\n", participantList[i].clientID);
+
+          leave.idSize = (uint8_t) strlen(participantList[i].clientID);
+          leave.id = calloc(leave.idSize, sizeof(char));
+          memcpy(leave.id, participantList[i].clientID, leave.idSize);
+          // Remove from list
+          free(participantList[i].clientID);
+          participantList[i] = participantList[--currentFreeParticipantSpot];
+          break;
+        }
+      }
+
+      size_t bufferSize;
+      uint8_t *buffer = pduCreator_pLeave(&leave, &bufferSize);
+
+      free(leave.id);
+
+      for (int i = 0; i < currentFreeParticipantSpot; i++) {
+        facade_write(participantList[i].socket_fd, buffer, bufferSize);
+      }
+
+      free(buffer);
+      // TODO: Remove from epoll as well?
 
     } else {
       fprintf(stderr, "Received unhandled message with OP Code: %d\n", p->opCode);
     }
+
+    free(p);
   }
 }
 
@@ -98,11 +182,12 @@ void server_main(int argc, char **argv) {
 
   fprintf(stdout, "Socket value: %d\n", nameServerSocket);
 
-  registerToServer(nameServerSocket, args);
+  //registerToServer(nameServerSocket, args);
 
   participantsList = dll_empty();
   dll_setMemoryHandler(participantsList, &freeParticipant);
 
+  currentFreeParticipantSpot = 0;
 
   int epoll_fd = epoll_create1(0);
 

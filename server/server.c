@@ -11,7 +11,7 @@ void parseServerArgs(int argc, char **argv, serverInputArgs *args) {
     exit(EXIT_FAILURE);
   }
   args->serverPort = argv[1];
-  args->serverName = calloc(strlen(argv[2]), sizeof(char));
+  args->serverName = calloc(strlen(argv[2]) + 1, sizeof(char));
   memcpy(args->serverName, argv[2], strlen(argv[2]));
 
   args->nameServerIP = calloc(strlen(argv[3]) + 1, sizeof(uint8_t));
@@ -63,7 +63,7 @@ void handleJoin(pduJoin *join, int socket_fd) {
   pJoin.id = calloc(pJoin.idSize, sizeof(char));
   memcpy(pJoin.id, clientID, pJoin.idSize);
   struct timeval time;
-  gettimeofday(&time, NULL);
+  gettimeofday(&time, NULL); // TODO: wrong time
   pJoin.timeStamp = (uint32_t) time.tv_usec;
 
   size_t bufferSize;
@@ -88,10 +88,10 @@ void handleMess(pduMess *mess, int socket_fd) {
   for (int i = 0; i < currentFreeParticipantSpot; i++) {
     if (socket_fd == participantList[i].socket_fd) {
       mess->idSize = (uint8_t) strlen(participantList[i].clientID);
-      mess->id = calloc(mess->idSize, sizeof(char));
+      //mess->id = calloc(mess->idSize, sizeof(char));
       memcpy(mess->id, participantList[i].clientID, mess->idSize);
       struct timeval time;
-      gettimeofday(&time, NULL);
+      gettimeofday(&time, NULL); // TODO: wrong time
       mess->timeStamp = (uint32_t) time.tv_usec;
     }
   }
@@ -101,13 +101,12 @@ void handleMess(pduMess *mess, int socket_fd) {
 
   for (int i = 0; i < currentFreeParticipantSpot; i++) {
     if (socket_fd != participantList[i].socket_fd) {
-      fprintf(stdout, "Sending message to %s\n", participantList[i].clientID);
-      facade_write(socket_fd, buffer, bufferSize);
-    } else {
-      fprintf(stdout, "Skipping sender %s\n", participantList[i].clientID);
+      facade_write(participantList[i].socket_fd, buffer, bufferSize);
     }
   }
-
+  free(mess->id);
+  free(mess->message);
+  free(mess);
   free(buffer);
 }
 

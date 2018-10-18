@@ -23,7 +23,7 @@ typedef struct {
   int socket_fd;
 } participant;
 
-participant participantList[200];
+participant participantList[UINT8_MAX];
 uint8_t currentFreeParticipantSpot;
 
 dll *participantsList;
@@ -32,11 +32,15 @@ void freeParticipant(void *id);
 
 void parseServerArgs(int argc, char **argv, serverInputArgs *args);
 
-void handleJoin(pduJoin *join, int socket_fd);
+void addToParticipantsList(int socket_fd, char *clientID);
+void sendParticipantsListToClient(int socket_fd);
+void notifyClientsNewClientJoined(int socket_fd, char *clientID);
 
-void handleMess(pduMess *mess, int socket_fd);
+bool handleJoin(pduJoin *join, int socket_fd);
 
-void handleQuit(pduQuit *quit, int socket_fd);
+bool handleMess(pduMess *mess, int socket_fd);
+
+bool handleQuit(int socket_fd);
 
 bool processSocketData(int socket_fd, void *args);
 

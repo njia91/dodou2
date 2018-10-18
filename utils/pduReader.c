@@ -193,11 +193,19 @@ pduJoin *pduReader_join(int socket_fd){
 }
 
 pduPJoin *pduReader_pJoin(int socket_fd){
+  return pduReader_pJoinLeave(socket_fd, PJOIN);
+}
+
+pduPLeave *pduReader_pLeave(int socket_fd){
+  return pduReader_pJoinLeave(socket_fd, PLEAVE);
+}
+
+pduPJoin *pduReader_pJoinLeave(int socket_fd, uint8_t opCode){
   pduPJoin *p = calloc(sizeof(pduPJoin), 1);
   uint8_t buffer[WORD_SIZE];
   int offset = 0;
 
-  p->opCode = PJOIN;
+  p->opCode = opCode;
 
   facade_read(socket_fd, buffer, 3 * BYTE_SIZE);
 
@@ -225,10 +233,6 @@ pduPJoin *pduReader_pJoin(int socket_fd){
   p->id[p->idSize] = '\0';
 
   return p;
-}
-
-pduPLeave *pduReader_pLeave(int socket_fd){
-  return pduReader_pJoin(socket_fd);
 }
 
 pduParticipants *pduReader_participants(int socket_fd){

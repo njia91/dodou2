@@ -25,6 +25,8 @@ pduPJoin *pduReader_pJoin(int socket_fd);
 
 pduPLeave *pduReader_pLeave(int socket_fd);
 
+pduPJoin *pduReader_pJoinLeave(int socket_fd, uint8_t opCode);
+
 pduParticipants *pduReader_participants(int socket_fd);
 
 //pduQuit *pduReader_quit(uint8_t *buffer);

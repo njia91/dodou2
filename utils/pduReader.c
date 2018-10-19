@@ -52,7 +52,7 @@ genericPdu *getDataFromSocket(int socket_fd) {
   //printf("WE GOT THIS OP CODE BACK %u   Size %zd\n", opCode, ret);
 
   if (ret == 0){
-    fprintf(stderr, "%s: Could not read data from Socket\n.", __func__);
+    fprintf(stderr, "%s: Could not read data from Socket.\n", __func__);
     return NULL;
   } else if (ret == -1){
     fprintf(stderr, "%s: %s \n",__func__, strerror(errno));

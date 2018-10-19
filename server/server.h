@@ -25,8 +25,7 @@ typedef struct {
 
 participant participantList[UINT8_MAX];
 uint8_t currentFreeParticipantSpot;
-
-dll *participantsList;
+serverData sData;
 
 void freeParticipant(void *id);
 
@@ -41,6 +40,8 @@ bool handleJoin(pduJoin *join, int socket_fd);
 bool handleMess(pduMess *mess, int socket_fd);
 
 bool handleQuit(int socket_fd);
+
+bool readInputFromUser(serverData *sData);
 
 bool processSocketData(int socket_fd, void *args);
 

@@ -231,55 +231,57 @@ bool handleQuit(int socket_fd) {
  * @return
  */
 bool readInputFromUser(serverData *sData) {
-  size_t buffSize = 0;
-  char *buffer = NULL;
+  size_t inputBufferSize = 0;
+  char *inputBuffer = NULL;
   bool active = true;
   ssize_t ret = 0;
   fflush(stdin);
 
-  if (getline(&buffer, &buffSize, stdin) == -1){
+  if (getline(&inputBuffer, &inputBufferSize, stdin) == -1){
     fprintf(stderr, "Failed to read data from user: %s\n", strerror(errno));
     active = false;
   } else {
-    if (strcmp(buffer, "QUIT\n") == 0){
+    if (strcmp(inputBuffer, "QUIT\n") == 0){
       // TODO: Notify all clients that serer is shutting down.
       // TODO: Shut down server gracefully.
       // TODO: Notify other thread that we are shutting down.
 //      active = false;
-//      uint8_t *pduBuffer = pduCreator_quit(&buffSize);
-//      ret = facade_write(sData->server_fd, pduBuffer, buffSize);
+//      uint8_t *pduBuffer = pduCreator_quit(&inputBufferSize);
+//      ret = facade_write(sData->server_fd, pduBuffer, inputBufferSize);
 //      free(pduBuffer);
-//      if (ret != buffSize){
+//      if (ret != inputBufferSize){
 //        fprintf(stderr, "Unable to write all data to socket.\n");
 //      }
     } else {
       // TODO: Allow server to send system messages to all clients
+      // Prepare message
+      pduMess mess;
+      mess.opCode = MESS;
+      mess.id = NULL;
+      mess.idSize = 0;
+      mess.message = (uint8_t *) inputBuffer;
+      mess.messageSize = (uint16_t) strlen(inputBuffer);
+      mess.timeStamp = 0; // TODO: Add propper timestamp
+
+      size_t messBufferSize;
+      uint8_t *messBuffer = pduCreator_mess(&mess, &messBufferSize);
+      // Send package
+      for (int i = 0; i < currentFreeParticipantSpot; i++) {
+        ret = facade_write(participantList[i].socket_fd, messBuffer, messBufferSize);
+      }
+      free(messBuffer);
+      if (ret != messBufferSize) {
+        fprintf(stderr, "%s: Unable to write all data to socket. Size %zd  ret %zd\n",__func__, messBufferSize, ret);
+        fprintf(stderr, "Errno : %s \n", strerror(errno));
+        if (errno == EBADF){
+          active = false;
+        }
+      }
       // TODO: Allow server to kick clients??
       // TODO: More nice functionality?
-//      // Prepare Message PDU
-//      pduMess mess;
-//      size_t size = 0;
-//      mess.opCode = MESS;
-//      mess.id = NULL;
-//      mess.idSize =  0;
-//      mess.message = (uint8_t *) buffer;
-//      mess.messageSize = (uint16_t) strlen(buffer);
-//      mess.timeStamp = 0;
-//
-//      uint8_t *packet = pduCreator_mess(&mess, &size);
-//      // Send package
-//      ret = facade_write(sData->server_fd, packet, size);
-//      free(packet);
-//      if (ret != size){
-//        fprintf(stderr, "%s: Unable to write all data to socket. Size %zd  ret %zd\n",__func__, size, ret);
-//        fprintf(stderr, "Errno : %s \n", strerror(errno));
-//        if (errno == EBADF){
-//          active = false;
-//        }
-//      }
     }
   }
-  free(buffer);
+  free(inputBuffer);
   return active;
 }
 

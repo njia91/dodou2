@@ -27,13 +27,19 @@ participant participantList[UINT8_MAX];
 uint8_t currentFreeParticipantSpot;
 serverData sData;
 
-void freeParticipant(void *id);
+uint32_t getCurrentTime();
 
 void parseServerArgs(int argc, char **argv, serverInputArgs *args);
 
 void addToParticipantsList(int socket_fd, char *clientID);
 void sendParticipantsListToClient(int socket_fd);
 void notifyClientsNewClientJoined(int socket_fd, char *clientID);
+
+bool sendDataFromServer(uint8_t *data, size_t dataSize);
+bool sendQuitFromServer();
+bool sendMessageFromServer(pduMess *mess);
+
+bool closeConnectionToClient(int client_fd, serverData *sData);
 
 bool handleJoin(pduJoin *join, int socket_fd);
 

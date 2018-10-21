@@ -1,5 +1,11 @@
 #include "server.h"
 
+uint32_t getCurrentTime() {
+  time_t rawtime;
+  time(&rawtime);
+  return (uint32_t) rawtime;
+}
+
 void parseServerArgs(int argc, char **argv, serverInputArgs *args) {
   if (argc <= 4) {
     fprintf(stderr, "Too few or too many Arguments \n"
@@ -88,9 +94,8 @@ bool handleJoin(pduJoin *join, int socket_fd) {
     memcpy(mess.message, messageString, strlen(messageString));
     mess.messageSize = (uint16_t) strlen(messageString);
     mess.idSize = 0;
-    mess.timeStamp = 0;
+    mess.timeStamp = getCurrentTime();
     mess.id = NULL;
-    // TODO: add mess.timeStamp;
 
     size_t bufferSize;
     // Tell new client server is full
@@ -131,9 +136,7 @@ void notifyClientsNewClientJoined(int socket_fd, char *clientID) {
   pJoin.idSize = (uint8_t) strlen(clientID);
   pJoin.id = calloc(pJoin.idSize, sizeof(char));
   memcpy(pJoin.id, clientID, pJoin.idSize);
-  struct timeval time;
-  gettimeofday(&time, NULL); // TODO: wrong time
-  pJoin.timeStamp = (uint32_t) time.tv_usec;
+  pJoin.timeStamp = getCurrentTime();
 
   size_t bufferSize;
   uint8_t *buffer = pduCreator_pJoin(&pJoin, &bufferSize);
@@ -146,6 +149,52 @@ void notifyClientsNewClientJoined(int socket_fd, char *clientID) {
 
   free(pJoin.id);
   free(buffer);
+}
+
+bool sendDataFromServer(uint8_t *data, size_t dataSize) {
+  ssize_t ret = 0;
+  for (int i = 0; i < currentFreeParticipantSpot; i++) {
+    ret = facade_write(participantList[i].socket_fd, data, dataSize);
+  }
+  free(data);
+  if (ret != dataSize) {
+    fprintf(stderr, "%s: Unable to write all data to socket. Size %zd  ret %zd\n",__func__, dataSize, ret);
+    fprintf(stderr, "Errno : %s \n", strerror(errno));
+    if (errno == EBADF) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool sendQuitFromServer() {
+  size_t quitDataSize;
+  uint8_t *quitData = pduCreator_quit(&quitDataSize);
+  return sendDataFromServer(quitData, quitDataSize);
+}
+
+bool sendMessageFromServer(pduMess *mess) {
+  size_t messDataSize;
+  uint8_t *messData = pduCreator_mess(mess, &messDataSize);
+  free(mess->message);
+  return sendDataFromServer(messData, messDataSize);
+}
+
+bool closeConnectionToClient(int client_fd, serverData *sData) {
+  bool allOk = true;
+  struct epoll_event ev_client;
+  ev_client.data.fd = client_fd;
+  ev_client.events = EPOLLIN | EPOLLONESHOT;
+  int result = facade_epoll_ctl(sData->epoll_fd, EPOLL_CTL_DEL, client_fd, &ev_client);
+  if (result == -1) {
+    fprintf(stderr, "Failed to remove socket %d from epoll: %s\n", client_fd, strerror(errno));
+    allOk = false;
+  } else {
+    sData->numOfActiveFds--;
+    fprintf(stdout, "Removed client from epoll: %d, numberOfEpoll:%d\n", client_fd, sData->numOfActiveFds);
+  }
+  close(client_fd);
+  return allOk;
 }
 
 /**
@@ -162,9 +211,7 @@ bool handleMess(pduMess *mess, int socket_fd) {
     if (socket_fd == participantList[i].socket_fd) {
       mess->idSize = (uint8_t) strlen(participantList[i].clientID);
       memcpy(mess->id, participantList[i].clientID, mess->idSize);
-      struct timeval time;
-      gettimeofday(&time, NULL); // TODO: wrong time
-      mess->timeStamp = (uint32_t) time.tv_usec;
+      mess->timeStamp = getCurrentTime();
     }
   }
 
@@ -190,9 +237,7 @@ bool handleQuit(int socket_fd) {
   // Prepare a leave message
   pduPLeave leave;
   leave.opCode = PLEAVE;
-  struct timeval time;
-  gettimeofday(&time, NULL);
-  leave.timeStamp = (uint32_t) time.tv_usec; // TODO: This is wrong, use better timestamp
+  leave.timeStamp = getCurrentTime();
 
   // Find the id of the leaving client
   for (int i = 0; i < currentFreeParticipantSpot; i++) {
@@ -219,9 +264,6 @@ bool handleQuit(int socket_fd) {
   }
 
   free(buffer);
-  // TODO: Remove from epoll as well??
-
-  close(socket_fd);
   return true;
 }
 
@@ -234,26 +276,45 @@ bool readInputFromUser(serverData *sData) {
   size_t inputBufferSize = 0;
   char *inputBuffer = NULL;
   bool active = true;
-  ssize_t ret = 0;
   fflush(stdin);
 
-  if (getline(&inputBuffer, &inputBufferSize, stdin) == -1){
+  if (getline(&inputBuffer, &inputBufferSize, stdin) == -1) {
     fprintf(stderr, "Failed to read data from user: %s\n", strerror(errno));
     active = false;
   } else {
-    if (strcmp(inputBuffer, "QUIT\n") == 0){
-      // TODO: Notify all clients that serer is shutting down.
+    if (strcmp(inputBuffer, "QUIT\n") == 0) {
+      char message[] = "Server is shutting down";
+      pduMess mess;
+      mess.opCode = MESS;
+      mess.messageSize = (uint16_t) strlen(message);
+      mess.message = calloc(mess.messageSize, sizeof(char));
+      memcpy(mess.message, message, mess.messageSize);
+      mess.timeStamp = getCurrentTime();
+      mess.id = NULL;
+      mess.idSize = 0;
+
+      // Send message to all clients that server is shutting down
+      active = sendMessageFromServer(&mess);
+      if (active) {
+        // Send quit message to all clients to close the connection
+        active = sendQuitFromServer();
+      }
+
+      while (currentFreeParticipantSpot > 0) {
+        closeConnectionToClient(participantList[currentFreeParticipantSpot - 1].socket_fd, sData);
+        for (int i = 0; i < currentFreeParticipantSpot; i++) {
+          int socket_fd = participantList[currentFreeParticipantSpot - 1].socket_fd;
+          if (socket_fd == participantList[i].socket_fd) {
+             // Remove the client from the participants list
+            free(participantList[i].clientID);
+            participantList[i] = participantList[--currentFreeParticipantSpot];
+            break;
+          }
+        }
+      }
       // TODO: Shut down server gracefully.
       // TODO: Notify other thread that we are shutting down.
-//      active = false;
-//      uint8_t *pduBuffer = pduCreator_quit(&inputBufferSize);
-//      ret = facade_write(sData->server_fd, pduBuffer, inputBufferSize);
-//      free(pduBuffer);
-//      if (ret != inputBufferSize){
-//        fprintf(stderr, "Unable to write all data to socket.\n");
-//      }
     } else {
-      // TODO: Allow server to send system messages to all clients
       // Prepare message
       pduMess mess;
       mess.opCode = MESS;
@@ -261,23 +322,11 @@ bool readInputFromUser(serverData *sData) {
       mess.idSize = 0;
       mess.message = (uint8_t *) inputBuffer;
       mess.messageSize = (uint16_t) strlen(inputBuffer);
-      mess.timeStamp = 0; // TODO: Add propper timestamp
+      mess.timeStamp = getCurrentTime();
 
-      size_t messBufferSize;
-      uint8_t *messBuffer = pduCreator_mess(&mess, &messBufferSize);
-      // Send package
-      for (int i = 0; i < currentFreeParticipantSpot; i++) {
-        ret = facade_write(participantList[i].socket_fd, messBuffer, messBufferSize);
-      }
-      free(messBuffer);
-      if (ret != messBufferSize) {
-        fprintf(stderr, "%s: Unable to write all data to socket. Size %zd  ret %zd\n",__func__, messBufferSize, ret);
-        fprintf(stderr, "Errno : %s \n", strerror(errno));
-        if (errno == EBADF){
-          active = false;
-        }
-      }
-      // TODO: Allow server to kick clients??
+      sendMessageFromServer(&mess);
+      // TODO: Allow server to list active users
+      // TODO: Allow server to kick clients
       // TODO: More nice functionality?
     }
   }
@@ -297,17 +346,20 @@ bool processSocketData(int socket_fd, void *args) {
 
   if (socket_fd == sData->server_fd) {
     // Server socket
-    fprintf(stdout, "ServerFD have info...\n");
     int client_fd = listenForIncomingConnection(socket_fd);
     facade_setToNonBlocking(client_fd);
-    fprintf(stdout, "ServerFD info read, new socket created:%d\n", client_fd);
-    // Add Client
+    // Add Client socket
     struct epoll_event ev_client;
     ev_client.data.fd = client_fd;
     ev_client.events = EPOLLIN | EPOLLONESHOT;
-    int result = facade_epoll_ctl(sData->epoll_fd, EPOLL_CTL_ADD, client_fd, &ev_client); // TODO: Handle result, set allOk = false
-    sData->numOfActiveFds++;
-    fprintf(stdout, "Added client to epoll: %d, numberOfEpoll:%d\n", client_fd, sData->numOfActiveFds);
+    int result = facade_epoll_ctl(sData->epoll_fd, EPOLL_CTL_ADD, client_fd, &ev_client);
+    if (result == -1) {
+      fprintf(stderr, "Failed to add socket %d to epoll: %s\n", client_fd, strerror(errno));
+      allOk = false;
+    } else {
+      sData->numOfActiveFds++;
+      fprintf(stdout, "Added client to epoll: %d, numberOfEpoll:%d\n", client_fd, sData->numOfActiveFds);
+    }
   }  else if (socket_fd == STDIN_FILENO){
     // Input from the server terminal
     allOk = readInputFromUser(sData);
@@ -330,6 +382,9 @@ bool processSocketData(int socket_fd, void *args) {
       allOk = handleMess((pduMess *)p, socket_fd);
     } else if (p->opCode == QUIT) {
       allOk = handleQuit(socket_fd);
+      if (allOk) {
+        allOk = closeConnectionToClient(socket_fd, sData);
+      }
     } else {
       fprintf(stderr, "Received unhandled message with OP Code: %d\n", p->opCode);
     }

@@ -2,17 +2,11 @@
 #include "server.h"
 
 uint32_t getCurrentTime() {
-  time_t rawtime;
-  time(&rawtime);
-  return (uint32_t) rawtime;
+  time_t rawTime;
+  time(&rawTime);
+  return (uint32_t) rawTime;
 }
 
-
-/**
- * Add a client to the participants list
- * @param socket_fd The clients socket
- * @param clientID The clients ID
- */
 void addToParticipantsList(int socket_fd, char *clientID) {
   participant par;
   par.clientID = calloc(strlen(clientID) + 1, sizeof(char));

@@ -47,12 +47,6 @@ int listenForIncomingConnection(int server_fd) {
   return connection_fd;
 }
 
-
-/**
- * When a client have joined the server, this can be used to send a list
- * of all current participants to the client.
- * @param socket_fd The socket of the client who should receive the participants list
- */
 void sendParticipantsListToClient(int socket_fd) {
   uint8_t numberOfParticipants = (uint8_t)(currentFreeParticipantSpot);
   pduParticipants participants;
@@ -78,12 +72,6 @@ void sendParticipantsListToClient(int socket_fd) {
   free(data);
 }
 
-/**
- * Will notify all participants that a new client have joined the server.
- * Will not notify the new client.
- * @param socket_fd Socket of the new client
- * @param clientID ID of the new client
- */
 void notifyClientsNewClientJoined(int socket_fd, char *clientID) {
   pduPJoin pJoin;
   pJoin.opCode = PJOIN;
@@ -103,6 +91,36 @@ void notifyClientsNewClientJoined(int socket_fd, char *clientID) {
 
   free(pJoin.id);
   free(buffer);
+}
+
+
+bool sendDataFromServer(uint8_t *data, size_t dataSize) {
+  ssize_t ret = 0;
+  for (int i = 0; i < currentFreeParticipantSpot; i++) {
+    ret = facade_write(participantList[i].socket_fd, data, dataSize);
+  }
+  free(data);
+  if (ret != dataSize) {
+    fprintf(stderr, "%s: Unable to write all data to socket. Size %zd  ret %zd\n",__func__, dataSize, ret);
+    fprintf(stderr, "Errno : %s \n", strerror(errno));
+    if (errno == EBADF) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool sendQuitFromServer() {
+  size_t quitDataSize;
+  uint8_t *quitData = pduCreator_quit(&quitDataSize);
+  return sendDataFromServer(quitData, quitDataSize);
+}
+
+bool sendMessageFromServer(pduMess *mess) {
+  size_t messDataSize;
+  uint8_t *messData = pduCreator_mess(mess, &messDataSize);
+  free(mess->message);
+  return sendDataFromServer(messData, messDataSize);
 }
 
 bool closeConnectionToClient(int client_fd, serverData *sData) {

@@ -34,7 +34,13 @@ uint8_t currentFreeParticipantSpot;
 
 uint32_t getCurrentTime();
 
-void fillInAddrInfo(struct addrinfo **addrInfo, const int port, const char *IPAddress, int socketType, int flags);
+/**
+ * Add a client to the participants list
+ * @param socket_fd The clients socket
+ * @param clientID The clients ID
+ */
 void addToParticipantsList(int socket_fd, char *clientID);
+
+void fillInAddrInfo(struct addrinfo **addrInfo, int port, const char *IPAddress, int socketType, int flags);
 
 #endif //DODOU2_HELPERS_H

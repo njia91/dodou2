@@ -15,6 +15,26 @@ typedef struct {
     char* nameServerPort;
 } serverInputArgs;
 
+
+typedef struct {
+  int commonEventFd;
+  int numOfActiveFds;
+  void *args;
+  int server_fd;
+  int epoll_fd;
+} serverData;
+
+typedef struct {
+  char *clientID;
+  int socket_fd;
+} participant;
+
+participant participantList[UINT8_MAX];
+uint8_t currentFreeParticipantSpot;
+
+uint32_t getCurrentTime();
+
 void fillInAddrInfo(struct addrinfo **addrInfo, const int port, const char *IPAddress, int socketType, int flags);
+void addToParticipantsList(int socket_fd, char *clientID);
 
 #endif //DODOU2_HELPERS_H

@@ -1,3 +1,4 @@
+#include <socketReaderAPI.h>
 #include "clientConnection.h"
 
 int setupServerSocket(serverInputArgs args) {
@@ -95,19 +96,20 @@ void notifyClientsNewClientJoined(int socket_fd, char *clientID) {
 
 
 bool sendDataFromServer(uint8_t *data, size_t dataSize) {
+  bool allOk = true;
   ssize_t ret = 0;
   for (int i = 0; i < currentFreeParticipantSpot; i++) {
     ret = facade_write(participantList[i].socket_fd, data, dataSize);
-  }
-  free(data);
-  if (ret != dataSize) {
-    fprintf(stderr, "%s: Unable to write all data to socket. Size %zd  ret %zd\n",__func__, dataSize, ret);
-    fprintf(stderr, "Errno : %s \n", strerror(errno));
-    if (errno == EBADF) {
-      return false;
+    if (ret != dataSize) {
+      fprintf(stderr, "%s: Unable to write all data to socket. Size %zd  ret %zd\n",__func__, dataSize, ret);
+      fprintf(stderr, "Errno : %s \n", strerror(errno));
+      if (errno == EBADF) {
+        allOk = false;
+      }
     }
   }
-  return true;
+  free(data);
+  return allOk;
 }
 
 bool sendQuitFromServer() {
@@ -123,19 +125,7 @@ bool sendMessageFromServer(pduMess *mess) {
   return sendDataFromServer(messData, messDataSize);
 }
 
-bool closeConnectionToClient(int client_fd, serverData *sData) {
-  bool allOk = true;
-  struct epoll_event ev_client;
-  ev_client.data.fd = client_fd;
-  ev_client.events = EPOLLIN | EPOLLONESHOT;
-  int result = facade_epoll_ctl(sData->epoll_fd, EPOLL_CTL_DEL, client_fd, &ev_client);
-  if (result == -1) {
-    fprintf(stderr, "Failed to remove socket %d from epoll: %s\n", client_fd, strerror(errno));
-    allOk = false;
-  } else {
-    sData->numOfActiveFds--;
-    fprintf(stdout, "Removed client from epoll: %d, numberOfEpoll:%d\n", client_fd, sData->numOfActiveFds);
-  }
-  close(client_fd);
-  return allOk;
+void closeConnectionToClient(int client_fd, serverData *sData) {
+  closeAndRemoveFD(sData->epoll_fd, client_fd);
+  sData->numOfActiveFds--;
 }

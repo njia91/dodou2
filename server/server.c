@@ -22,6 +22,7 @@ bool handleJoin(pduJoin *join, int socket_fd) {
   char* clientID = calloc(join->idSize + 1, sizeof(char));
   memcpy(clientID, join->id, join->idSize);
 
+  addToParticipantsList(socket_fd, clientID);
   sendParticipantsListToClient(socket_fd);
 
   if (currentFreeParticipantSpot >= UINT8_MAX) {
@@ -54,8 +55,6 @@ bool handleJoin(pduJoin *join, int socket_fd) {
     return true;
   }
 
-  addToParticipantsList(socket_fd, clientID);
-
   notifyClientsNewClientJoined(socket_fd, clientID);
 
   free(clientID);
@@ -86,7 +85,7 @@ bool handleMess(pduMess *mess, int socket_fd) {
   return true;
 }
 
-bool handleQuit(int socket_fd) {
+bool handleQuit(int socket_fd, serverData *sData) {
   // Prepare a leave message
   pduPLeave leave;
   leave.opCode = PLEAVE;
@@ -100,9 +99,7 @@ bool handleQuit(int socket_fd) {
       leave.idSize = (uint8_t) strlen(participantList[i].clientID);
       leave.id = calloc(leave.idSize, sizeof(char));
       memcpy(leave.id, participantList[i].clientID, leave.idSize);
-      // Remove the client from the participants list
-      free(participantList[i].clientID);
-      participantList[i] = participantList[--currentFreeParticipantSpot];
+      removeFromParticipantsList(participantList[i].socket_fd);
       break;
     }
   }
@@ -115,8 +112,8 @@ bool handleQuit(int socket_fd) {
   for (int i = 0; i < currentFreeParticipantSpot; i++) {
     facade_write(participantList[i].socket_fd, buffer, bufferSize);
   }
-
   free(buffer);
+
   return true;
 }
 
@@ -153,15 +150,57 @@ bool readInputFromUser(serverData *sData) {
         for (int i = 0; i < currentFreeParticipantSpot; i++) {
           int socket_fd = participantList[currentFreeParticipantSpot - 1].socket_fd;
           if (socket_fd == participantList[i].socket_fd) {
-             // Remove the client from the participants list
-            free(participantList[i].clientID);
-            participantList[i] = participantList[--currentFreeParticipantSpot];
+            removeFromParticipantsList(participantList[i].socket_fd);
             break;
           }
         }
       }
-      // TODO: Shut down server gracefully.
-      // TODO: Notify other thread that we are shutting down.
+      fprintf(stdout, "Shutting down server...\n");
+      running = false;
+      active = false;
+    } else if (strcmp(inputBuffer, "LIST\n") == 0) {
+      // List all active users
+      if (currentFreeParticipantSpot == 0) {
+        fprintf(stdout, "No active users\n");
+      } else {
+        for (int i = 0; i < currentFreeParticipantSpot; i++) {
+          fprintf(stdout, "User ID: %d, User name:%s\n", participantList[i].socket_fd, participantList[i].clientID);
+        }
+      }
+    } else if (startsWith("KICK", inputBuffer)) {
+      char *clientID;
+      clientID = strtok (inputBuffer," ");
+      if (clientID != NULL) {
+        clientID = strtok (NULL," ");
+        if (clientID != NULL) {
+          int client_fd = atoi(clientID);
+          char messageString[] = "You have been kicked by the server";
+          pduMess mess;
+          mess.opCode = MESS;
+          mess.message = calloc(strlen(messageString), sizeof(char));
+          memcpy(mess.message, messageString, strlen(messageString));
+          mess.messageSize = (uint16_t) strlen(messageString);
+          mess.idSize = 0;
+          mess.timeStamp = getCurrentTime();
+          mess.id = NULL;
+
+          size_t bufferSize;
+          // Tell new client server is full
+          uint8_t *buffer = pduCreator_mess(&mess, &bufferSize);
+          facade_write(client_fd, buffer, bufferSize);
+
+          free(mess.message);
+          free(buffer);
+
+          buffer = pduCreator_quit(&bufferSize);
+          // Tell client to close connection
+          facade_write(client_fd, buffer, bufferSize);
+          free(buffer);
+
+          removeFromParticipantsList(client_fd);
+          closeAndRemoveFD(sData->epoll_fd, client_fd);
+        }
+      }
     } else {
       // Prepare message
       pduMess mess;
@@ -173,8 +212,6 @@ bool readInputFromUser(serverData *sData) {
       mess.timeStamp = getCurrentTime();
 
       sendMessageFromServer(&mess);
-      // TODO: Allow server to list active users
-      // TODO: Allow server to kick clients
       // TODO: More nice functionality?
     }
   }
@@ -206,16 +243,17 @@ bool processSocketData(int socket_fd, void *args) {
     // Input from the server terminal
     allOk = readInputFromUser(sData);
     if (!allOk){
-      eventfd_t e = TERMINATE;
-      write(sData->commonEventFd, &e, sizeof(eventfd_t));
+      //eventfd_t e = TERMINATE;
+      //write(sData->commonEventFd, &e, sizeof(eventfd_t));
     }
   } else {
     // Client socket
     genericPdu *p = getDataFromSocket(socket_fd);
     if (p == NULL) {
       // Client have disconnected unexpectedly
-      handleQuit(socket_fd);
-      return false;
+      handleQuit(socket_fd, sData);
+      closeConnectionToClient(socket_fd, sData);
+      return true;
     }
     // Its a message, process it
     if (p->opCode == JOIN) {
@@ -223,9 +261,9 @@ bool processSocketData(int socket_fd, void *args) {
     } else if (p->opCode == MESS) {
       allOk = handleMess((pduMess *)p, socket_fd);
     } else if (p->opCode == QUIT) {
-      allOk = handleQuit(socket_fd);
+      allOk = handleQuit(socket_fd, sData);
       if (allOk) {
-        allOk = closeConnectionToClient(socket_fd, sData);
+        closeConnectionToClient(socket_fd, sData);
       }
     } else {
       fprintf(stderr, "Received unhandled message with OP Code: %d\n", p->opCode);
@@ -250,7 +288,6 @@ void server_main(int argc, char **argv) {
   currentFreeParticipantSpot = 0;
 
   int epoll_fd = epoll_create1(0);
-  int event_fd;
 
   int server_fd = setupServerSocket(args);
 
@@ -266,16 +303,8 @@ void server_main(int argc, char **argv) {
   ev_stdin.events = EPOLLIN | EPOLLONESHOT;
   facade_epoll_ctl(epoll_fd, EPOLL_CTL_ADD, STDIN_FILENO, &ev_stdin);
 
-  // Add inter-thread communication FD.
-  event_fd = eventfd(0, O_NONBLOCK);
-  struct epoll_event ev_ITC;
-  ev_ITC.data.fd = event_fd;
-  ev_ITC.events = EPOLLIN | EPOLLONESHOT;
-  facade_epoll_ctl(epoll_fd, EPOLL_CTL_ADD, event_fd, &ev_ITC);
-
   facade_setToNonBlocking(server_fd);
 
-  sData.commonEventFd = event_fd;
   sData.server_fd = server_fd;
   sData.numOfActiveFds = 1; // Just the server
   sData.epoll_fd = epoll_fd;
@@ -286,6 +315,7 @@ void server_main(int argc, char **argv) {
   rInfo.func = processSocketData;
   rInfo.numOfActiveFds = 1; // Only counting the Server socket.
 
+  running = true;
 
   fflush(stdin);
 
@@ -295,16 +325,17 @@ void server_main(int argc, char **argv) {
     fprintf(stderr, "Unable to create a pthread. Error: %d\n", ret);
   }
 
-  bool running = true;
   while (running) {
     if (gotACKResponse(nameServerSocket)) {
-      fprintf(stdout, "Still connected to server\n");
+      //fprintf(stdout, "Still connected to server\n");
     } else {
       registerToServer(nameServerSocket, args);
       fprintf(stdout, "Lost contact with name server, connecting again\n");
     }
     sleep(8);
   }
+  fprintf(stdout, "Shutting down server\n");
+  close(server_fd);
   pthread_join(receivingThread, NULL);
 
   free(args.nameServerIP);

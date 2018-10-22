@@ -7,6 +7,7 @@
 #include <netdb.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef struct {
     char* serverPort;
@@ -17,7 +18,6 @@ typedef struct {
 
 
 typedef struct {
-  int commonEventFd;
   int numOfActiveFds;
   void *args;
   int server_fd;
@@ -33,6 +33,7 @@ participant participantList[UINT8_MAX];
 uint8_t currentFreeParticipantSpot;
 
 uint32_t getCurrentTime();
+bool startsWith(const char *pre, const char *str);
 
 /**
  * Add a client to the participants list
@@ -40,6 +41,8 @@ uint32_t getCurrentTime();
  * @param clientID The clients ID
  */
 void addToParticipantsList(int socket_fd, char *clientID);
+
+void removeFromParticipantsList(int socket_fd);
 
 void fillInAddrInfo(struct addrinfo **addrInfo, int port, const char *IPAddress, int socketType, int flags);
 

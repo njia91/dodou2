@@ -35,6 +35,6 @@ bool sendDataFromServer(uint8_t *data, size_t dataSize);
 bool sendQuitFromServer();
 bool sendMessageFromServer(pduMess *mess);
 
-bool closeConnectionToClient(int client_fd, serverData *sData);
+void closeConnectionToClient(int client_fd, serverData *sData);
 
 #endif //DODOU2_CLIENTCONNECTION_H

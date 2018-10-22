@@ -11,6 +11,7 @@
 #include "list.h"
 
 serverData sData;
+bool running;
 
 void parseServerArgs(int argc, char **argv, serverInputArgs *args);
 
@@ -40,7 +41,7 @@ bool handleMess(pduMess *mess, int socket_fd);
  * @param socket_fd The socket of the leaving client
  * @return If all is ok
  */
-bool handleQuit(int socket_fd);
+bool handleQuit(int socket_fd, serverData *sData);
 
 /**
  *

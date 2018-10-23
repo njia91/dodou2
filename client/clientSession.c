@@ -64,6 +64,9 @@ bool processSocketData(int socket_fd, void *args){
       if (strcmp((char *)mess->id, cData->username) != 0){
         allOk = handleMessPdu((pduMess *) p);
       }
+    } else if (p->opCode == PARTICIPANTS) {
+      pduParticipants *participants = (pduParticipants *) p;
+      printServerParticipants(participants);
     }
     deletePdu(p);
   }
@@ -90,14 +93,16 @@ bool readInputFromUser(clientData *cData) {
         fprintf(stderr, "Unable to write all data to socket.\n");
       }
     } else {
+      char *text = calloc(strlen(buffer) - 1, sizeof(char));
+      memcpy(text, buffer, strlen(buffer) - 1);
       // Prepare Message PDU
       pduMess mess;
       size_t size = 0;
       mess.opCode = MESS;
       mess.id = NULL;
       mess.idSize =  0;
-      mess.message = (uint8_t *) buffer;
-      mess.messageSize = (uint16_t) strlen(buffer);
+      mess.message = (uint8_t *) text;
+      mess.messageSize = (uint16_t) strlen(text);
       mess.timeStamp = 0;
 
       uint8_t *packet = pduCreator_mess(&mess, &size);
@@ -132,7 +137,7 @@ bool handleMessPdu(pduMess *mess){
     if (mess->idSize == 0){
       fprintf(stdout, "\n%s [SERVER MESSAGE] > %s\n", timeString, mess->message);
     } else {
-      fprintf(stdout, "%s [%s] %s", timeString, mess->id, mess->message);
+      fprintf(stdout, "%s [%s] %s\n", timeString, mess->id, mess->message);
     }
     return true;
   } else {
@@ -142,7 +147,7 @@ bool handleMessPdu(pduMess *mess){
 }
 
 int setupConnectionToServer(const uint8_t *ip, const char *port) {
-  int socket_fd;
+  int socket_fd = -1;
   struct addrinfo* res=0;
   struct addrinfo *rp = NULL;
   struct addrinfo hints;
@@ -162,11 +167,11 @@ int setupConnectionToServer(const uint8_t *ip, const char *port) {
   // Try each address until we connect
   for (rp = res; rp != NULL; rp = rp->ai_next){
     socket_fd = facade_createSocket(&res);
-    if (socket_fd ==-1){
+    if (socket_fd == -1){
       continue;
     }
 
-    if(facade_connect(socket_fd, &res) != -1){
+    if (facade_connect(socket_fd, &res) != -1){
       break;
     }
   }
@@ -184,7 +189,7 @@ int joinChatSession(int server_fd, inputArgs *inArgs){
   pduJoin p;
   p.opCode = JOIN;
   p.id = (uint8_t *)inArgs->username;
-  p.idSize = strlen(inArgs->username);
+  p.idSize = (uint8_t) strlen(inArgs->username);
   size_t bufferSize = 0;
   uint8_t *buffer = pduCreator_join(&p, &bufferSize);
 
@@ -199,25 +204,7 @@ int joinChatSession(int server_fd, inputArgs *inArgs){
   return 0;
 }
 
-int printServerParticipants(int server_fd, inputArgs *inArgs){
-  genericPdu *pdu = getDataFromSocket(server_fd);
-
-  if (pdu == NULL){
-    fprintf(stderr, "Unable to read data from socket: %s\n", strerror(errno));
-    close(server_fd);
-    exit(EXIT_FAILURE);
-  }
-
-  if (pdu->opCode != PARTICIPANTS){
-    fprintf(stderr, "Invalid packet received from Server.\n"
-                    "Expected: %d\n"
-                    "Actual: %d\n", PARTICIPANTS, pdu->opCode);
-    close(server_fd);
-    exit(EXIT_FAILURE);
-  }
-
-  pduParticipants *p = (pduParticipants *) pdu;
-
+int printServerParticipants(pduParticipants *p){
   fprintf(stdout, "-----------------------------------------------------------------\n");
   fprintf(stdout, "Welcome! \n");
   fprintf(stdout, "Online users: \n");
@@ -226,7 +213,6 @@ int printServerParticipants(int server_fd, inputArgs *inArgs){
     fprintf(stdout, "\t%s\n", p->ids[i]);
   }
   fprintf(stdout, "-----------------------------------------------------------------\n");
-  deletePdu(pdu);
   return 0;
 }
 
@@ -245,8 +231,6 @@ void startChatSession(inputArgs *inArgs){
     fprintf(stderr," Failed to send JOIN PDU to server: %s \n", strerror(errno));
     exit(EXIT_FAILURE);
   }
-
-  printServerParticipants(server_fd, inArgs);
 
   epoll_fd = epoll_create1(0);
 

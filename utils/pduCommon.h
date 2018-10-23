@@ -31,7 +31,6 @@ typedef struct {
   uint8_t   serverNameSize;
   uint8_t   *serverName;
   uint16_t  tcpPort;
-  uint8_t   ipAddress[4];
 } pduReg;
 
 typedef struct {

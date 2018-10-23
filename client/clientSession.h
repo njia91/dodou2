@@ -35,7 +35,7 @@ int setupConnectionToServer(const uint8_t *ip, const char *port);
 
 int joinChatSession(int server_fd, inputArgs *inArgs);
 
-int printServerParticipants(int server_fd, inputArgs *inArgs);
+int printServerParticipants(pduParticipants *p);
 
 bool readInputFromUser(clientData *cData);
 

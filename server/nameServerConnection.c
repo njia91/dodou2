@@ -38,10 +38,6 @@ void registerToServer(int sock, serverInputArgs args) {
   registerMessage.serverName = (uint8_t *) args.serverName;
   registerMessage.serverNameSize = (uint8_t) strlen(args.serverName);
   registerMessage.tcpPort = (uint16_t) atoi(args.serverPort);
-  registerMessage.ipAddress[0] = 90; // TODO: Don't use hardcoded ip
-  registerMessage.ipAddress[1] = 231;
-  registerMessage.ipAddress[2] = 78;
-  registerMessage.ipAddress[3] = 221;
 
   size_t registerBufferSize;
   uint8_t *registerBuffer = pduCreator_reg(&registerMessage, &registerBufferSize);

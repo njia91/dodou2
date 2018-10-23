@@ -4,7 +4,7 @@ int establishConnectionWithNs(serverInputArgs args) {
   int nameServer_fd = 0;
   struct addrinfo *res = 0;
 
-  fillInAddrInfo(&res, atoi(args.nameServerPort), args.nameServerIP, SOCK_DGRAM, AI_ADDRCONFIG);
+  fillInAddrInfo(&res, stringToInt(args.nameServerPort), args.nameServerIP, SOCK_DGRAM, AI_ADDRCONFIG);
 
   nameServer_fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
   if (nameServer_fd == -1) {
@@ -37,14 +37,15 @@ void registerToServer(int sock, serverInputArgs args) {
   registerMessage.opCode = REG;
   registerMessage.serverName = (uint8_t *) args.serverName;
   registerMessage.serverNameSize = (uint8_t) strlen(args.serverName);
-  registerMessage.tcpPort = (uint16_t) atoi(args.serverPort);
+  registerMessage.tcpPort = (uint16_t) stringToInt(args.serverPort);
 
   size_t registerBufferSize;
   uint8_t *registerBuffer = pduCreator_reg(&registerMessage, &registerBufferSize);
 
-  fprintf(stdout, "Sending REG to name server\n");
   ssize_t res = facade_write(sock, registerBuffer, registerBufferSize);
-  // TODO: Handle return value
+  if (res != registerBufferSize) {
+    fprintf(stderr, "Failed to send REG to name server\n");
+  }
   free(registerBuffer);
 }
 
@@ -65,7 +66,9 @@ bool gotACKResponse(int nameServerSocket) {
     uint8_t *aliveBuffer = pduCreator_alive(&aliveMessage, &aliveBufferSize);
 
     ssize_t res = facade_write(nameServerSocket, aliveBuffer, aliveBufferSize);
-    // TODO: Handle return value
+    if (res != aliveBufferSize) {
+      fprintf(stderr, "Failed to send ALIVE to name server\n");
+    }
     free(aliveBuffer);
   } else if (data->opCode == NOTREQ) {
     return false;

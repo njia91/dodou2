@@ -49,6 +49,8 @@ add_executable(client
         client/client.c
         client/client.h
         client/clientSession.c
+        utils/helpers.c
+        utils/helpers.h
         utils/sysCall_facade.c
         utils/sysCall_facade.h
         utils/pduCommon.c
@@ -66,7 +68,7 @@ add_executable(clientTest
         utils/mocks/sysCall_facadeMock.c
         utils/mocks/pduReaderMock.c
         utils/socketReaderAPI.c
-        client/test/ThreadingSolution.h server/helpers.c server/helpers.h)
+        client/test/ThreadingSolution.h utils/helpers.c utils/helpers.h)
 
 add_executable(testPduReader
         utils/pduCommon.c
@@ -83,8 +85,8 @@ add_executable(server
         utils/socketReaderAPI.h
         utils/list.c
         utils/list.h
-        server/helpers.c
-        server/helpers.h
+        utils/helpers.c
+        utils/helpers.h
         server/nameServerConnection.c
         server/nameServerConnection.h
         server/server.c

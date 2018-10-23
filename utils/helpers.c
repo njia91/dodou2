@@ -13,6 +13,19 @@ bool startsWith(const char *pre, const char *str) {
   return lenstr < lenpre ? false : strncmp(pre, str, lenpre) == 0;
 }
 
+int stringToInt(char *string) {
+  char *end;
+  for (long i = strtol(string, &end, 10); string != end; i = strtol(string, &end, 10)) {
+    string = end;
+    if (errno != ERANGE) {
+      return (int) i; // Found integer
+    }
+    errno = 0; // Keep searching string
+  }
+  fprintf(stderr, "Could not find integer\n");
+  return -1;
+}
+
 void addToParticipantsList(int socket_fd, char *clientID) {
   participant par;
   par.clientID = calloc(strlen(clientID) + 1, sizeof(char));
@@ -35,7 +48,7 @@ void removeFromParticipantsList(int socket_fd) {
   }
 }
 
-void fillInAddrInfo(struct addrinfo **addrInfo, const int port, const char *IPAddress, int socketType, int flags) {
+void fillInAddrInfo(struct addrinfo **addrInfo, const int port, const uint8_t *IPAddress, int socketType, int flags) {
   char portId[15];
   sprintf(portId, "%d", port);
   struct addrinfo info;
@@ -45,7 +58,7 @@ void fillInAddrInfo(struct addrinfo **addrInfo, const int port, const char *IPAd
   info.ai_protocol = 0;
   info.ai_flags = flags;
 
-  if (getaddrinfo(IPAddress, portId, &info, addrInfo) != 0) {
+  if (getaddrinfo((char *)IPAddress, portId, &info, addrInfo) != 0) {
     fprintf(stderr, "Failed to get address info\n");
     exit(EXIT_FAILURE);
   }

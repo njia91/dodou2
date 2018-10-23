@@ -41,7 +41,7 @@ bool handleMess(pduMess *mess, int socket_fd);
  * @param socket_fd The socket of the leaving client
  * @return If all is ok
  */
-bool handleQuit(int socket_fd, serverData *sData);
+bool handleQuit(int socket_fd);
 
 /**
  *

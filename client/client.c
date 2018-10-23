@@ -132,7 +132,7 @@ int getServerChoiceFromUser(pduSList *pSList, inputArgs *inArgs){
       return 0;
     }
 
-    userInput = atoi(buffer);
+    userInput = stringToInt(buffer);
     if (userInput > 0 && userInput <= pSList->noOfServers){
       inArgs->ipAdress = calloc(1, 16);
       // Convert DOT style IP address.

@@ -7,7 +7,7 @@
 #include <sysCall_facade.h>
 #include <pduCommon.h>
 #include <pduCreator.h>
-
+#include <socketReaderAPI.h>
 
 #include "helpers.h"
 

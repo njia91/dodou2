@@ -85,7 +85,7 @@ bool handleMess(pduMess *mess, int socket_fd) {
   return true;
 }
 
-bool handleQuit(int socket_fd, serverData *sData) {
+bool handleQuit(int socket_fd) {
   // Prepare a leave message
   pduPLeave leave;
   leave.opCode = PLEAVE;
@@ -142,7 +142,7 @@ bool readInputFromUser(serverData *sData) {
       active = sendMessageFromServer(&mess);
       if (active) {
         // Send quit message to all clients to close the connection
-        active = sendQuitFromServer();
+        sendQuitFromServer();
       }
 
       while (currentFreeParticipantSpot > 0) {
@@ -173,7 +173,7 @@ bool readInputFromUser(serverData *sData) {
       if (clientID != NULL) {
         clientID = strtok (NULL," ");
         if (clientID != NULL) {
-          int client_fd = atoi(clientID);
+          int client_fd = stringToInt(clientID);
           char messageString[] = "You have been kicked by the server";
           pduMess mess;
           mess.opCode = MESS;
@@ -251,7 +251,7 @@ bool processSocketData(int socket_fd, void *args) {
     genericPdu *p = getDataFromSocket(socket_fd);
     if (p == NULL) {
       // Client have disconnected unexpectedly
-      handleQuit(socket_fd, sData);
+      handleQuit(socket_fd);
       closeConnectionToClient(socket_fd, sData);
       return true;
     }
@@ -261,7 +261,7 @@ bool processSocketData(int socket_fd, void *args) {
     } else if (p->opCode == MESS) {
       allOk = handleMess((pduMess *)p, socket_fd);
     } else if (p->opCode == QUIT) {
-      allOk = handleQuit(socket_fd, sData);
+      allOk = handleQuit(socket_fd);
       if (allOk) {
         closeConnectionToClient(socket_fd, sData);
       }

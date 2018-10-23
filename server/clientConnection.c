@@ -1,13 +1,12 @@
-#include <socketReaderAPI.h>
 #include "clientConnection.h"
 
 int setupServerSocket(serverInputArgs args) {
   int server_fd;
   struct addrinfo* addrInfo = 0;
 
-  fprintf(stdout, "Listening on port: %d\n", atoi(args.serverPort));
+  fprintf(stdout, "Listening on port: %d\n", stringToInt(args.serverPort));
 
-  fillInAddrInfo(&addrInfo, atoi(args.serverPort), NULL, SOCK_STREAM, AI_PASSIVE);
+  fillInAddrInfo(&addrInfo, stringToInt(args.serverPort), NULL, SOCK_STREAM, AI_PASSIVE);
 
   server_fd = socket(addrInfo->ai_family, addrInfo->ai_socktype, addrInfo->ai_protocol);
   if (server_fd == -1) {

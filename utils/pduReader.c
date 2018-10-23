@@ -240,7 +240,7 @@ pduParticipants *pduReader_participants(int socket_fd){
   uint16_t dataSize;
   uint8_t buffer[WORD_SIZE];
   uint8_t idBuffer[256];
-  int offset = 0;
+  size_t offset = 0;
 
   p->opCode = PARTICIPANTS;
 

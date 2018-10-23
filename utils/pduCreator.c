@@ -124,7 +124,7 @@ uint8_t *pduCreator_participants(pduParticipants *par, size_t *nByte) {
 
   int offset = 0;
   for( int i = 0; i < par->noOfIds; i ++){
-    strLen = strlen((char *)par->ids[i]) + 1;
+    strLen = (uint16_t) strlen((char *)par->ids[i]) + 1;
     memcpy(pduBuffer + WORD_SIZE + offset, par->ids[i], strLen);
     offset += strLen;
   }

@@ -199,6 +199,7 @@ bool readInputFromUser(serverData *sData) {
 
           removeFromParticipantsList(client_fd);
           closeAndRemoveFD(sData->epoll_fd, client_fd);
+          active = false;
         }
       }
     } else {

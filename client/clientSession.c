@@ -286,7 +286,7 @@ void startChatSession(inputArgs *inArgs){
   //waitForIncomingMessages((void *)&rInfo);
 
   pthread_join(receivingThread, NULL);
-  fprintf(stdout, "EXIT !!! \n");
+  fprintf(stdout, "Terminating session. \n");
   close(epoll_fd);
   //close(server_fd);
 }

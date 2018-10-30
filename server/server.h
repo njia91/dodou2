@@ -3,6 +3,7 @@
 
 #include <pthread.h>
 #include <socketReaderAPI.h>
+#include <semaphore.h>
 
 #include "clientConnection.h"
 #include "pduReader.h"
@@ -12,6 +13,7 @@
 
 serverData sData;
 bool running;
+sem_t mutex;
 
 void parseServerArgs(int argc, char **argv, serverInputArgs *args);
 
@@ -57,6 +59,9 @@ bool readInputFromUser(serverData *sData);
  * @return If all is ok
  */
 bool processSocketData(int socket_fd, void *args);
+
+bool checkRunning();
+bool setRunning(bool newRunning);
 
 void server_main(int argc, char **argv);
 

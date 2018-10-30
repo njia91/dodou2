@@ -156,7 +156,7 @@ bool readInputFromUser(serverData *sData) {
         }
       }
       fprintf(stdout, "Shutting down server...\n");
-      running = false;
+      setRunning(false);
       active = false;
     } else if (strcmp(inputBuffer, "LIST\n") == 0) {
       // List all active users
@@ -239,12 +239,11 @@ bool processSocketData(int socket_fd, void *args) {
       sData->numOfActiveFds++;
       fprintf(stdout, "Added client to epoll: %d, numberOfEpoll:%d\n", client_fd, sData->numOfActiveFds);
     }
-  }  else if (socket_fd == STDIN_FILENO){
+  } else if (socket_fd == STDIN_FILENO) {
     // Input from the server terminal
     allOk = readInputFromUser(sData);
-    if (!allOk){
-      //eventfd_t e = TERMINATE;
-      //write(sData->commonEventFd, &e, sizeof(eventfd_t));
+    if (!allOk) {
+      running = false;
     }
   } else {
     // Client socket
@@ -272,6 +271,20 @@ bool processSocketData(int socket_fd, void *args) {
     deletePdu(p);
   }
   return allOk;
+}
+
+bool checkRunning() {
+  bool currentRunning;
+  sem_wait(&mutex);
+  currentRunning = running;
+  sem_post(&mutex);
+  return currentRunning;
+}
+
+bool setRunning(bool newRunning) {
+  sem_wait(&mutex);
+  running = newRunning;
+  sem_post(&mutex);
 }
 
 void server_main(int argc, char **argv) {
@@ -315,7 +328,8 @@ void server_main(int argc, char **argv) {
   rInfo.func = processSocketData;
   rInfo.numOfActiveFds = 1; // Only counting the Server socket.
 
-  running = true;
+  sem_init(&mutex, 0, 1);
+  setRunning(true);
 
   fflush(stdin);
 
@@ -325,19 +339,25 @@ void server_main(int argc, char **argv) {
     fprintf(stderr, "Unable to create a pthread. Error: %d\n", ret);
   }
 
-  while (running) {
+  while (checkRunning()) {
     if (gotACKResponse(nameServerSocket)) {
       //fprintf(stdout, "Still connected to server\n");
     } else {
       registerToServer(nameServerSocket, args);
       fprintf(stdout, "Lost contact with name server, connecting again\n");
     }
-    sleep(8);
+    for (int i = 0; i < 8; i++) {
+      if (!checkRunning()) {
+        break;
+      } else {
+        sleep(1);
+      }
+    }
   }
   fprintf(stdout, "Shutting down server\n");
   close(server_fd);
   pthread_join(receivingThread, NULL);
-
+  sem_destroy(&mutex);
   free(args.nameServerIP);
   free(args.serverName);
   free(args.nameServerPort);

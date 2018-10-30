@@ -93,7 +93,7 @@ pduAck *pduReader_ack(uint8_t* buffer){
   p->opCode = ACK;
 
   if (buffer[1] != 0){
-    fprintf(stderr, "Invalid padding for ACK Packet %d\n", buffer[0]);
+    fprintf(stderr, "Invalid padding for ACK Packet %d\n", buffer[1]);
     return NULL;
   }
 
@@ -107,7 +107,7 @@ pduNotReq *pduReader_notReg(uint8_t* buffer) {
   p->opCode = NOTREQ;
 
   if (buffer[1] != 0) {
-    fprintf(stderr, "Invalid padding for NOTREG Packet %d\n", buffer[0]);
+    fprintf(stderr, "Invalid padding for NOTREG Packet %d\n", buffer[1]);
     return NULL;
   }
 
@@ -174,7 +174,7 @@ pduJoin *pduReader_join(int socket_fd){
   p->idSize = buffer[0];
 
   if (buffer[1] != 0 || buffer[2] != 0 ){
-    fprintf(stderr, "Invalid padding for JOIN Packet %d\n", buffer[0]);
+    fprintf(stderr, "Invalid padding for JOIN Packet %d %d\n", buffer[1], buffer[2]);
     return NULL;
   }
 
@@ -212,7 +212,7 @@ pduPJoin *pduReader_pJoinLeave(int socket_fd, uint8_t opCode){
   memcpy(&p->idSize, buffer , sizeof(uint8_t));
 
   if (buffer[1] != 0 || buffer[2] != 0 ){
-    fprintf(stderr, "Invalid padding for JOIN Packet %d\n", buffer[0]);
+    fprintf(stderr, "Invalid padding for LEAVE Packet %d %d\n", buffer[1], buffer[2]);
     return NULL;
   }
 
@@ -284,7 +284,7 @@ pduMess *pduReader_mess(int socket_fd){
   calculatedChecksum += calculateCheckSum((void *) buffer, 3 * BYTE_SIZE);
 
   if (buffer[0] != 0){
-    fprintf(stderr, "Invalid padding for JOIN Packet %d\n", buffer[0]);
+    fprintf(stderr, "Invalid padding for MESSAGE Packet %d\n", buffer[0]);
     return NULL;
   }
 
@@ -299,7 +299,7 @@ pduMess *pduReader_mess(int socket_fd){
   p->messageSize = htons(p->messageSize);
 
   if (buffer[2] != 0 || buffer[3] != 0){
-    fprintf(stderr, "Invalid padding for MESSAGE Packet \n");
+    fprintf(stderr, "Invalid padding for MESSAGE Packet %d %d\n", buffer[2], buffer[3]);
     return NULL;
   }
 

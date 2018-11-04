@@ -17,7 +17,7 @@ void parseServerArgs(int argc, char **argv, serverInputArgs *args) {
 }
 
 bool handleJoin(pduJoin *join, int socket_fd) {
-  fprintf(stdout, "Received JOIN message\n");
+  fprintf(stdout, "Received JOIN message from: %s\n", join->id);
 
   char* clientID = calloc(join->idSize + 1, sizeof(char));
   memcpy(clientID, join->id, join->idSize);
@@ -62,9 +62,9 @@ bool handleJoin(pduJoin *join, int socket_fd) {
 }
 
 bool handleMess(pduMess *mess, int socket_fd) {
-  fprintf(stdout, "Received a message\n");
 
   if (!mess->isCheckSumOk) {
+    fprintf(stderr, "bad checksum\n");
     return false;
   }
 
@@ -77,6 +77,7 @@ bool handleMess(pduMess *mess, int socket_fd) {
     }
   }
 
+  fprintf(stdout, "Received a message from: %s\n", mess->id);
   // Send the message to everyone except the sender
   size_t bufferSize;
   uint8_t *buffer = pduCreator_mess(mess, &bufferSize);
@@ -263,11 +264,10 @@ bool processSocketData(int socket_fd, void *args) {
     if (p->opCode == JOIN) {
       allOk = handleJoin((pduJoin *)p, socket_fd);
     } else if (p->opCode == MESS) {
-      allOk = handleMess((pduMess *)p, socket_fd);
-      if (!allOk) {
+      if (handleMess((pduMess *)p, socket_fd)) {
         // Server send mess with bad checksum
-        handleQuit(socket_fd);
-        closeConnectionToClient(socket_fd, sData);
+        //handleQuit(socket_fd);
+        //closeConnectionToClient(socket_fd, sData);
       }
     } else if (p->opCode == QUIT) {
       allOk = handleQuit(socket_fd);

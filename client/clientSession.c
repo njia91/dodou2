@@ -281,32 +281,7 @@ void startChatSession(inputArgs *inArgs){
   if (ret){
     fprintf(stderr, "Unable to create a pthread. Error: %d\n", ret);
   }
-/*
-  bool r = true;
-  while (r) {
-    char buffer[] = "TEST";
-    char *text = calloc(strlen(buffer), sizeof(char));
-    memcpy(text, buffer, strlen(buffer));
-    // Prepare Message PDU
-    pduMess mess;
-    size_t size = 0;
-    mess.opCode = MESS;
-    mess.id = NULL;
-    mess.idSize =  0;
-    mess.message = (uint8_t *) text;
-    mess.messageSize = (uint16_t) strlen(text);
-    mess.timeStamp = 0;
 
-    uint8_t *packet = pduCreator_mess(&mess, &size);
-    // Send package
-    facade_write(cData.server_fd, packet, size);
-    free(packet);
-    free(text);
-    fprintf(stdout, "SENDING\n");
-    sleep(1);
-
-  }
-*/
   //readInputFromUser(server_fd);
   //waitForIncomingMessages((void *)&rInfo);
 

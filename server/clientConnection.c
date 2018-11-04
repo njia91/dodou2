@@ -39,7 +39,7 @@ int setupServerSocket(serverInputArgs args) {
 
 int listenForIncomingConnection(int server_fd) {
   int connection_fd;
-  fprintf(stdout, "Listening for connections on %d...\n", server_fd);
+  //fprintf(stdout, "Listening for connections on %d...\n", server_fd);
   // Listen for ONE incoming connection.
   while((connection_fd = accept(server_fd, 0, 0)) == -1) {
     fprintf(stderr, "SERVER ERROR: %s", strerror(errno));

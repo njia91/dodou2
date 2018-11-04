@@ -60,7 +60,7 @@ bool processSocketData(int socket_fd, void *args){
       allOk = false;
     } else if (p->opCode == MESS){
       pduMess *mess = (pduMess *) p;
-      // Do not handle messages sent by this client.
+      // Do not display messages sent by receiving client.
       if (strcmp((char *)mess->id, cData->username) != 0){
         allOk = handleMessPdu((pduMess *) p);
       }
@@ -258,7 +258,6 @@ void startChatSession(inputArgs *inArgs){
   ev_ITC.events = EPOLLIN | EPOLLONESHOT;
   facade_epoll_ctl(epoll_fd, EPOLL_CTL_ADD, event_fd, &ev_ITC);
 
-  //facade_setToNonBlocking(STDIN_FILENO);
   facade_setToNonBlocking(server_fd);
 
   clientData cData;
@@ -266,13 +265,11 @@ void startChatSession(inputArgs *inArgs){
   cData.server_fd = server_fd;
   cData.username = inArgs->username;
 
-
   readerInfo rInfo;
   rInfo.args = &cData;
   rInfo.epoll_fd = epoll_fd;
   rInfo.func = processSocketData;
   rInfo.numOfActiveFds = 1; // Only counting the Server socket.
-
 
   fflush(stdin);
 
@@ -282,11 +279,7 @@ void startChatSession(inputArgs *inArgs){
     fprintf(stderr, "Unable to create a pthread. Error: %d\n", ret);
   }
 
-  //readInputFromUser(server_fd);
-  //waitForIncomingMessages((void *)&rInfo);
-
   pthread_join(receivingThread, NULL);
   fprintf(stdout, "Terminating session. \n");
   close(epoll_fd);
-  //close(server_fd);
 }

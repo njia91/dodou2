@@ -13,6 +13,20 @@ bool startsWith(const char *pre, const char *str) {
   return lenstr < lenpre ? false : strncmp(pre, str, lenpre) == 0;
 }
 
+uint8_t getCurrentFreeParticipantSpot() {
+  uint8_t retVal;
+  sem_wait(&helperMutex);
+  retVal = currentFreeParticipantSpot;
+  sem_post(&helperMutex);
+  return retVal;
+}
+
+void setCurrentFreeParticipantSpot(uint8_t newVal) {
+  sem_wait(&helperMutex);
+  currentFreeParticipantSpot = newVal;
+  sem_post(&helperMutex);
+}
+
 int stringToInt(char *string) {
   char *end;
   for (long i = strtol(string, &end, 10); string != end; i = strtol(string, &end, 10)) {
@@ -32,7 +46,7 @@ void addToParticipantsList(int socket_fd, char *clientID) {
   memcpy(par.clientID, clientID, strlen(clientID));
   par.socket_fd = socket_fd;
 
-  fprintf(stdout, "%s added to participants\n", par.clientID);
+  //fprintf(stdout, "%s added to participants\n", par.clientID);
   participantList[currentFreeParticipantSpot] = par;
   currentFreeParticipantSpot++;
 }

@@ -25,7 +25,7 @@ bool handleJoin(pduJoin *join, int socket_fd) {
   addToParticipantsList(socket_fd, clientID);
   sendParticipantsListToClient(socket_fd);
 
-  if (currentFreeParticipantSpot >= UINT8_MAX) {
+  if (getCurrentFreeParticipantSpot() >= UINT8_MAX) {
     char messageString[] = "Server full";
     pduMess mess;
     mess.opCode = MESS;
@@ -64,8 +64,12 @@ bool handleJoin(pduJoin *join, int socket_fd) {
 bool handleMess(pduMess *mess, int socket_fd) {
   fprintf(stdout, "Received a message\n");
 
+  if (!mess->isCheckSumOk) {
+    return false;
+  }
+
   // Add more info to the message
-  for (int i = 0; i < currentFreeParticipantSpot; i++) {
+  for (int i = 0; i < getCurrentFreeParticipantSpot(); i++) {
     if (socket_fd == participantList[i].socket_fd) {
       mess->idSize = (uint8_t) strlen(participantList[i].clientID);
       memcpy(mess->id, participantList[i].clientID, mess->idSize);
@@ -76,7 +80,7 @@ bool handleMess(pduMess *mess, int socket_fd) {
   // Send the message to everyone except the sender
   size_t bufferSize;
   uint8_t *buffer = pduCreator_mess(mess, &bufferSize);
-  for (int i = 0; i < currentFreeParticipantSpot; i++) {
+  for (int i = 0; i < getCurrentFreeParticipantSpot(); i++) {
     if (socket_fd != participantList[i].socket_fd) {
       facade_write(participantList[i].socket_fd, buffer, bufferSize);
     }
@@ -92,7 +96,7 @@ bool handleQuit(int socket_fd) {
   leave.timeStamp = getCurrentTime();
 
   // Find the id of the leaving client
-  for (int i = 0; i < currentFreeParticipantSpot; i++) {
+  for (int i = 0; i < getCurrentFreeParticipantSpot(); i++) {
     if (socket_fd == participantList[i].socket_fd) {
       fprintf(stdout, "%s have left the chat\n", participantList[i].clientID);
       // Add the client id to the message
@@ -109,7 +113,7 @@ bool handleQuit(int socket_fd) {
   free(leave.id);
 
   // Notify all in participants list that a client have left
-  for (int i = 0; i < currentFreeParticipantSpot; i++) {
+  for (int i = 0; i < getCurrentFreeParticipantSpot(); i++) {
     facade_write(participantList[i].socket_fd, buffer, bufferSize);
   }
   free(buffer);
@@ -145,10 +149,10 @@ bool readInputFromUser(serverData *sData) {
         sendQuitFromServer();
       }
 
-      while (currentFreeParticipantSpot > 0) {
-        closeConnectionToClient(participantList[currentFreeParticipantSpot - 1].socket_fd, sData);
-        for (int i = 0; i < currentFreeParticipantSpot; i++) {
-          int socket_fd = participantList[currentFreeParticipantSpot - 1].socket_fd;
+      while (getCurrentFreeParticipantSpot() > 0) {
+        closeConnectionToClient(participantList[getCurrentFreeParticipantSpot() - 1].socket_fd, sData);
+        for (int i = 0; i < getCurrentFreeParticipantSpot(); i++) {
+          int socket_fd = participantList[getCurrentFreeParticipantSpot() - 1].socket_fd;
           if (socket_fd == participantList[i].socket_fd) {
             removeFromParticipantsList(participantList[i].socket_fd);
             break;
@@ -160,10 +164,10 @@ bool readInputFromUser(serverData *sData) {
       active = false;
     } else if (strcmp(inputBuffer, "LIST\n") == 0) {
       // List all active users
-      if (currentFreeParticipantSpot == 0) {
+      if (getCurrentFreeParticipantSpot() == 0) {
         fprintf(stdout, "No active users\n");
       } else {
-        for (int i = 0; i < currentFreeParticipantSpot; i++) {
+        for (int i = 0; i < getCurrentFreeParticipantSpot(); i++) {
           fprintf(stdout, "User ID: %d, User name:%s\n", participantList[i].socket_fd, participantList[i].clientID);
         }
       }
@@ -238,7 +242,7 @@ bool processSocketData(int socket_fd, void *args) {
       allOk = false;
     } else {
       sData->numOfActiveFds++;
-      fprintf(stdout, "Added client to epoll: %d, numberOfEpoll:%d\n", client_fd, sData->numOfActiveFds);
+      //fprintf(stdout, "Added client to epoll: %d, numberOfEpoll:%d\n", client_fd, sData->numOfActiveFds);
     }
   } else if (socket_fd == STDIN_FILENO) {
     // Input from the server terminal
@@ -260,6 +264,11 @@ bool processSocketData(int socket_fd, void *args) {
       allOk = handleJoin((pduJoin *)p, socket_fd);
     } else if (p->opCode == MESS) {
       allOk = handleMess((pduMess *)p, socket_fd);
+      if (!allOk) {
+        // Server send mess with bad checksum
+        handleQuit(socket_fd);
+        closeConnectionToClient(socket_fd, sData);
+      }
     } else if (p->opCode == QUIT) {
       allOk = handleQuit(socket_fd);
       if (allOk) {
@@ -299,7 +308,8 @@ void server_main(int argc, char **argv) {
 
   registerToServer(nameServerSocket, args);
 
-  currentFreeParticipantSpot = 0;
+  sem_init(&helperMutex, 0, 1);
+  setCurrentFreeParticipantSpot(0);
 
   int epoll_fd = epoll_create1(0);
 
@@ -336,13 +346,14 @@ void server_main(int argc, char **argv) {
 
   pthread_t receivingThread;
   int ret = pthread_create(&receivingThread, NULL, waitForIncomingMessages, (void *)&rInfo);
-  if (ret){
+
+  if (ret) {
     fprintf(stderr, "Unable to create a pthread. Error: %d\n", ret);
   }
 
   while (checkRunning()) {
     if (gotACKResponse(nameServerSocket)) {
-      //fprintf(stdout, "Still connected to server\n");
+      fprintf(stdout, "Still connected to server\n");
     } else {
       registerToServer(nameServerSocket, args);
       fprintf(stdout, "Lost contact with name server, connecting again\n");
@@ -359,6 +370,7 @@ void server_main(int argc, char **argv) {
   close(server_fd);
   pthread_join(receivingThread, NULL);
   sem_destroy(&mutex);
+  sem_destroy(&helperMutex);
   free(args.nameServerIP);
   free(args.serverName);
   free(args.nameServerPort);

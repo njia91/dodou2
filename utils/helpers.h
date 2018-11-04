@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <semaphore.h>
 
 typedef struct {
     char* serverPort;
@@ -31,9 +32,13 @@ typedef struct {
 
 participant participantList[UINT8_MAX];
 uint8_t currentFreeParticipantSpot;
+sem_t helperMutex;
 
 uint32_t getCurrentTime();
 bool startsWith(const char *pre, const char *str);
+
+uint8_t getCurrentFreeParticipantSpot();
+void setCurrentFreeParticipantSpot(uint8_t newVal);
 
 int stringToInt(char *string);
 

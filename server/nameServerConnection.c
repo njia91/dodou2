@@ -57,7 +57,7 @@ bool gotACKResponse(int nameServerSocket) {
 
     pduAlive aliveMessage;
     aliveMessage.opCode = ALIVE;
-    aliveMessage.noOfClients = 0;
+    aliveMessage.noOfClients = getCurrentFreeParticipantSpot();
     aliveMessage.id = ack->id;
 
     free(data);

@@ -1,5 +1,11 @@
 # dodou2
 
+You have to clone the repository you need to include the submodules with "--recursive" flag:
+
+For ssh: git clone --recursive git@github.com:njia91/dodou2.git
+
+For HTTPS: git clone --recursive https://github.com/njia91/dodou2.git
+
 To compile and run program:
 
 Stand in repo root

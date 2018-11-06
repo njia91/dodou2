@@ -23,6 +23,7 @@ typedef struct {
   void *args;
   int server_fd;
   int epoll_fd;
+  int commonEvent_fd;
 } serverData;
 
 typedef struct {

@@ -217,7 +217,7 @@ bool readInputFromUser(serverData *sData) {
 
           removeFromParticipantsList(client_fd);
           closeAndRemoveFD(sData->epoll_fd, client_fd);
-          active = false;
+          active = true;
         }
       }
     } else {
@@ -262,8 +262,27 @@ int processSocketData(int socket_fd, void *args) {
     // Input from the server terminal
     allOk = readInputFromUser(sData);
     if (!allOk) {
+      fprintf(stdout, "Inter thread start terminate\n");
       setRunning(false);
       allOk = TERMINATE_SESSION;
+      eventfd_t e = TERMINATE;
+      write(sData->commonEvent_fd, &e, sizeof(eventfd_t));
+    }
+  } else if (socket_fd == sData->commonEvent_fd) {
+    // Inter thread
+    eventfd_t value = 0;
+
+    if (facade_read(socket_fd, &value, sizeof(eventfd_t))){
+      if (value == TERMINATE){
+        allOk = EXIT_FD;
+        eventfd_t e = TERMINATE;
+        write(sData->commonEvent_fd, &e, sizeof(eventfd_t));
+      }
+    } else {
+      fprintf(stderr, "Enable to read from eventfd_Read()");
+      allOk = TERMINATE_SESSION;
+      eventfd_t e = TERMINATE;
+      write(sData->commonEvent_fd, &e, sizeof(eventfd_t));
     }
   } else {
     // Client socket
@@ -336,17 +355,24 @@ void server_main(int argc, char **argv) {
   ev_stdin.events = EPOLLIN | EPOLLONESHOT;
   facade_epoll_ctl(epoll_fd, EPOLL_CTL_ADD, STDIN_FILENO, &ev_stdin);
 
+  // Add inter-thread communication FD.
+  int event_fd = eventfd(0, O_NONBLOCK);
+  struct epoll_event ev_ITC;
+  ev_ITC.data.fd = event_fd;
+  ev_ITC.events = EPOLLIN | EPOLLONESHOT;
+  facade_epoll_ctl(epoll_fd, EPOLL_CTL_ADD, event_fd, &ev_ITC);
+
   facade_setToNonBlocking(server_fd);
 
   sData.server_fd = server_fd;
   sData.numOfActiveFds = 1; // Just the server
   sData.epoll_fd = epoll_fd;
+  sData.commonEvent_fd = event_fd;
 
   readerInfo rInfo;
   rInfo.args = &sData;
   rInfo.epoll_fd = epoll_fd;
   rInfo.func = processSocketData;
-  rInfo.numOfActiveFds = 1; // Only counting the Server socket.
 
   sem_init(&mutex, 0, 1);
   setRunning(true);
@@ -355,9 +381,25 @@ void server_main(int argc, char **argv) {
 
   pthread_t receivingThread;
   pthread_t receivingThread2;
+  pthread_t receivingThread3;
+  pthread_t receivingThread4;
+  pthread_t receivingThread5;
+  pthread_t receivingThread6;
+  pthread_t receivingThread7;
+  pthread_t receivingThread8;
+  pthread_t receivingThread9;
+  pthread_t receivingThread10;
   int ret = pthread_create(&receivingThread, NULL, waitForIncomingMessages, (void *)&rInfo);
 
   pthread_create(&receivingThread2, NULL, waitForIncomingMessages, (void *)&rInfo);
+  pthread_create(&receivingThread3, NULL, waitForIncomingMessages, (void *)&rInfo);
+  pthread_create(&receivingThread4, NULL, waitForIncomingMessages, (void *)&rInfo);
+  pthread_create(&receivingThread5, NULL, waitForIncomingMessages, (void *)&rInfo);
+  pthread_create(&receivingThread6, NULL, waitForIncomingMessages, (void *)&rInfo);
+  pthread_create(&receivingThread7, NULL, waitForIncomingMessages, (void *)&rInfo);
+  pthread_create(&receivingThread8, NULL, waitForIncomingMessages, (void *)&rInfo);
+  pthread_create(&receivingThread9, NULL, waitForIncomingMessages, (void *)&rInfo);
+  pthread_create(&receivingThread10, NULL, waitForIncomingMessages, (void *)&rInfo);
 
   if (ret) {
     fprintf(stderr, "Unable to create a pthread. Error: %d\n", ret);
@@ -365,7 +407,7 @@ void server_main(int argc, char **argv) {
 
   while (checkRunning()) {
     if (gotACKResponse(nameServerSocket)) {
-      fprintf(stdout, "Still connected to server\n");
+      fprintf(stdout, "Still connected to name server\n");
     } else {
       registerToServer(nameServerSocket, args);
       fprintf(stdout, "Lost contact with name server, connecting again\n");
@@ -379,11 +421,19 @@ void server_main(int argc, char **argv) {
     }
   }
   fprintf(stdout, "Shutting down server\n");
-  closeAndRemoveFD(epoll_fd, server_fd);
   pthread_join(receivingThread, NULL);
   pthread_join(receivingThread2, NULL);
+  pthread_join(receivingThread3, NULL);
+  pthread_join(receivingThread4, NULL);
+  pthread_join(receivingThread5, NULL);
+  pthread_join(receivingThread6, NULL);
+  pthread_join(receivingThread7, NULL);
+  pthread_join(receivingThread8, NULL);
+  pthread_join(receivingThread9, NULL);
+  pthread_join(receivingThread10, NULL);
   sem_destroy(&mutex);
   sem_destroy(&helperMutex);
+  closeAndRemoveFD(epoll_fd, server_fd);
 
   free(args.nameServerIP);
   free(args.serverName);

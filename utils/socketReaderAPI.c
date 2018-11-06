@@ -29,7 +29,6 @@ void *waitForIncomingMessages(void *threadData){
       if ((events[i].events & EPOLLRDHUP) || (events[i].events & EPOLLERR)){
         fprintf(stderr, "%s: Socket has shutdown by peer or due to error. \n", __func__);
         closeAndRemoveFD(rInfo->epoll_fd, events[i].data.fd);
-        rInfo->numOfActiveFds--;
       } else if ((events[i].events & EPOLLIN) ){
         allOk = rInfo->func(events[i].data.fd, rInfo->args);
         if (allOk == REARM_FD){
@@ -41,16 +40,20 @@ void *waitForIncomingMessages(void *threadData){
           //facade_epoll_ctl(rInfo->epoll_fd, EPOLL_CTL_MOD, events[i].data.fd, &ev);
         } else if (allOk == REMOVE_FD) {
           closeAndRemoveFD(rInfo->epoll_fd, events[i].data.fd);
-          rInfo->numOfActiveFds--;
         } else if (allOk == TERMINATE_SESSION){
           closeAndRemoveFD(rInfo->epoll_fd, events[i].data.fd);
-          rInfo->numOfActiveFds--;
           isSessionActive = false;
+        } else if (allOk == EXIT_FD) {
+          isSessionActive = false;
+          ev.data.fd = events[i].data.fd;
+          ev.events = EPOLLIN | EPOLLONESHOT;
+          if (facade_epoll_ctl(rInfo->epoll_fd, EPOLL_CTL_MOD, events[i].data.fd, &ev) == -1){
+            fprintf(stderr, "%s: epoll_ctl failed. Errno: %s \n", __func__, strerror(errno));
+          }
         }
       } else {
         fprintf(stderr, "%s: Unknown EPOLL EVENT %d  \n",__func__, events[i].events);
         closeAndRemoveFD(rInfo->epoll_fd, events[i].data.fd);
-        rInfo->numOfActiveFds--;
       }
     }
   }

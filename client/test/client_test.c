@@ -118,7 +118,6 @@ void clientTest_recieveAndSendDatafromServer(){
   rInfo.epoll_fd = 1;
   rInfo.func = processSocketData;
   rInfo.args = (void *) &cData;
-  rInfo.numOfActiveFds = 1;
 
   char id[] = "Michael Åäö";
   char mess[] = "First mess ";
@@ -185,7 +184,6 @@ void clientTest_recieveMessWithInvalidCheckSum(){
   rInfo.epoll_fd = 1;
   rInfo.func = processSocketData;
   rInfo.args = (void *) &cData;
-  rInfo.numOfActiveFds = 1;
 
   char id[] = "Michael Åäö";
   char mess[] = "First mess ";

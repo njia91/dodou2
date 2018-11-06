@@ -18,6 +18,7 @@ static const int MAX_EVENTS = 32;
 static const int TERMINATE_SESSION = -1;
 static const int REMOVE_FD = 0;
 static const int REARM_FD = 1;
+static const int EXIT_FD = 2;
 
 
 typedef uint64_t eventfd_t;
@@ -29,7 +30,6 @@ typedef int processEvent(int, void *);
 
 typedef struct {
   int epoll_fd;
-  int numOfActiveFds;
   void *args;
   processEvent *func;
 } readerInfo;

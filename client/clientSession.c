@@ -269,7 +269,6 @@ void startChatSession(inputArgs *inArgs){
   rInfo.args = &cData;
   rInfo.epoll_fd = epoll_fd;
   rInfo.func = processSocketData;
-  rInfo.numOfActiveFds = 1; // Only counting the Server socket.
 
   fflush(stdin);
 

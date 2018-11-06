@@ -168,7 +168,8 @@ pduJoin *pduReader_join(int socket_fd){
   uint8_t buffer[WORD_SIZE];
   int offset = 0;
 
-  facade_read(socket_fd, buffer, 3 * BYTE_SIZE);
+  //facade_read(socket_fd, buffer, 3 * BYTE_SIZE);
+  readAllData(socket_fd, buffer, 3 * BYTE_SIZE);
   p->idSize = buffer[0];
 
   if (buffer[1] != 0 || buffer[2] != 0 ){
@@ -179,7 +180,8 @@ pduJoin *pduReader_join(int socket_fd){
   p->id = calloc(sizeof(uint8_t), p->idSize + 1);
   for (int i = 0; i < calculateNoOfWords(p->idSize); i++){
     memset(buffer, 0, WORD_SIZE);
-    facade_read(socket_fd, buffer, WORD_SIZE);
+    //facade_read(socket_fd, buffer, WORD_SIZE);
+    readAllData(socket_fd, buffer, WORD_SIZE);
     // The null-terminator indicates end of of message.
     for (int k = 0; k < WORD_SIZE && buffer[k] != '\0'; k++){
       p->id[offset] = buffer[k];
@@ -205,8 +207,9 @@ pduPJoin *pduReader_pJoinLeave(int socket_fd, uint8_t opCode){
 
   p->opCode = opCode;
 
-  facade_read(socket_fd, buffer, 3 * BYTE_SIZE);
+//  facade_read(socket_fd, buffer, 3 * BYTE_SIZE);
 
+  readAllData(socket_fd, buffer, 3 * BYTE_SIZE);
   memcpy(&p->idSize, buffer , sizeof(uint8_t));
 
   if (buffer[1] != 0 || buffer[2] != 0 ){
@@ -214,14 +217,16 @@ pduPJoin *pduReader_pJoinLeave(int socket_fd, uint8_t opCode){
     return NULL;
   }
 
-  facade_read(socket_fd, buffer, WORD_SIZE);
+  //facade_read(socket_fd, buffer, WORD_SIZE);
 
+  readAllData(socket_fd, buffer, WORD_SIZE);
   memcpy(&p->timeStamp, buffer, sizeof(uint32_t));
   p->timeStamp = ntohl(p->timeStamp);
   p->id = calloc(sizeof(uint8_t), p->idSize + 1);
   for (int i = 0; i < calculateNoOfWords(p->idSize); i++){
     memset(buffer, 0, WORD_SIZE);
-    facade_read(socket_fd, buffer, WORD_SIZE);
+    //facade_read(socket_fd, buffer, WORD_SIZE);
+    readAllData(socket_fd, buffer, WORD_SIZE);
     // The null-terminator indicates end of of message.
     for (int k = 0; k < WORD_SIZE && buffer[k] != '\0'; k++){
       p->id[offset] = buffer[k];
@@ -355,17 +360,18 @@ pduMess *pduReader_mess(int socket_fd){
 }
 
 bool readAllData(int socket_fd, uint8_t *buffer, size_t byteSize){
-  size_t dataToRead =  byteSize;
+  size_t dataToRead = byteSize;
   ssize_t ret = 0;
+  size_t dataRead = 0;
 
-  while (dataToRead >0){
-    ret = facade_read(socket_fd, buffer, dataToRead);
-    dataToRead -=ret;
+  while (dataToRead > 0) {
+    ret = facade_read(socket_fd, buffer + dataRead, dataToRead);
+
+    dataToRead -= ret;
+    dataRead += ret;
   }
   return true;
 }
-
-
 
 void deletePdu(genericPdu *pdu){
   uint8_t opCode = pdu->opCode;

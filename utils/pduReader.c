@@ -278,7 +278,8 @@ pduMess *pduReader_mess(int socket_fd){
   uint8_t givenCheckSum = 0;
   uint16_t calculatedChecksum = p->opCode;
 
-  facade_read(socket_fd, buffer, 3 * BYTE_SIZE);
+  //facade_read(socket_fd, buffer, 3 * BYTE_SIZE);
+  readAllData(socket_fd, buffer, 3 * BYTE_SIZE);
   calculatedChecksum += calculateCheckSum((void *) buffer, 3 * BYTE_SIZE);
 
   if (buffer[0] != 0){
@@ -290,7 +291,8 @@ pduMess *pduReader_mess(int socket_fd){
   memcpy(&givenCheckSum, buffer + 2 * BYTE_SIZE, sizeof(uint8_t));
 
 
-  facade_read(socket_fd, buffer, WORD_SIZE);
+  //facade_read(socket_fd, buffer, WORD_SIZE);
+  readAllData(socket_fd, buffer, WORD_SIZE);
   calculatedChecksum += calculateCheckSum((void *) buffer, WORD_SIZE);
 
   memcpy(&p->messageSize, buffer , sizeof(uint16_t));
@@ -301,7 +303,9 @@ pduMess *pduReader_mess(int socket_fd){
     return NULL;
   }
 
-  facade_read(socket_fd, buffer, WORD_SIZE);
+  //facade_read(socket_fd, buffer, WORD_SIZE);
+  readAllData(socket_fd, buffer, WORD_SIZE);
+
   calculatedChecksum += calculateCheckSum((void *) buffer, WORD_SIZE);
 
   memcpy(&p->timeStamp, buffer, sizeof(uint32_t));
@@ -310,7 +314,8 @@ pduMess *pduReader_mess(int socket_fd){
   p->message = calloc(sizeof(uint8_t), p->messageSize + 1);
   for (int i = 0; i < calculateNoOfWords(p->messageSize); i++){
     memset(buffer, 0, WORD_SIZE);
-    facade_read(socket_fd, buffer, WORD_SIZE);
+    readAllData(socket_fd, buffer, WORD_SIZE);
+    //facade_read(socket_fd, buffer, WORD_SIZE);
     calculatedChecksum += calculateCheckSum((void *) buffer, WORD_SIZE);
     // The null-terminator indicates end of of message.
     for (int k = 0;k < WORD_SIZE && buffer[k] != '\0'; k++){
@@ -325,7 +330,8 @@ pduMess *pduReader_mess(int socket_fd){
 
   for (int i = 0; i < calculateNoOfWords(p->idSize); i++){
     memset(buffer, 0, WORD_SIZE);
-    facade_read(socket_fd, buffer, WORD_SIZE);
+    readAllData(socket_fd, buffer, WORD_SIZE);
+    //facade_read(socket_fd, buffer, WORD_SIZE);
     calculatedChecksum += calculateCheckSum((void *) buffer, WORD_SIZE);
     // The null-terminator indicates end of of message.
     for (int k = 0; k < WORD_SIZE && buffer[k] != '\0'; k++){
@@ -347,6 +353,18 @@ pduMess *pduReader_mess(int socket_fd){
 
   return p;
 }
+
+bool readAllData(int socket_fd, uint8_t *buffer, size_t byteSize){
+  size_t dataToRead =  byteSize;
+  ssize_t ret = 0;
+
+  while (dataToRead >0){
+    ret = facade_read(socket_fd, buffer, dataToRead);
+    dataToRead -=ret;
+  }
+  return true;
+}
+
 
 
 void deletePdu(genericPdu *pdu){

@@ -33,6 +33,8 @@ pduParticipants *pduReader_participants(int socket_fd);
 
 pduMess *pduReader_mess(int socket_fd);
 
+bool readAllData(int socket_fd, uint8_t *buffer, size_t byteSize);
+
 void deletePdu(genericPdu *pdu);
 
 

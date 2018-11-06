@@ -41,6 +41,7 @@ int stringToInt(char *string) {
 }
 
 void addToParticipantsList(int socket_fd, char *clientID) {
+  sem_wait(&helperMutex);
   participant par;
   par.clientID = calloc(strlen(clientID) + 1, sizeof(char));
   memcpy(par.clientID, clientID, strlen(clientID));
@@ -49,9 +50,11 @@ void addToParticipantsList(int socket_fd, char *clientID) {
   //fprintf(stdout, "%s added to participants\n", par.clientID);
   participantList[currentFreeParticipantSpot] = par;
   currentFreeParticipantSpot++;
+  sem_post(&helperMutex);
 }
 
 void removeFromParticipantsList(int socket_fd) {
+  sem_post(&helperMutex);
   for (int i = 0; i < currentFreeParticipantSpot; i++) {
     if (socket_fd == participantList[i].socket_fd) {
       // Remove the client from the participants list
@@ -60,6 +63,7 @@ void removeFromParticipantsList(int socket_fd) {
       break;
     }
   }
+  sem_wait(&helperMutex);
 }
 
 void fillInAddrInfo(struct addrinfo **addrInfo, const int port, const uint8_t *IPAddress, int socketType, int flags) {

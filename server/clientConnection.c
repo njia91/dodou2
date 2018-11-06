@@ -48,15 +48,17 @@ int listenForIncomingConnection(int server_fd) {
 }
 
 void sendParticipantsListToClient(int socket_fd) {
-  uint8_t numberOfParticipants = (uint8_t)(currentFreeParticipantSpot);
+  uint8_t numberOfParticipants = (uint8_t)(getCurrentFreeParticipantSpot());
   pduParticipants participants;
   participants.opCode = PARTICIPANTS;
   participants.ids = calloc(numberOfParticipants, sizeof(char *));
   participants.noOfIds = numberOfParticipants;
+  sem_wait(&helperMutex);
   for (uint8_t i = 0; i < currentFreeParticipantSpot; i++) {
     participants.ids[i] = calloc(strlen(participantList[i].clientID) + 1, sizeof(char));
     memcpy(participants.ids[i], participantList[i].clientID, strlen(participantList[i].clientID));
   }
+  sem_post(&helperMutex);
 
   // Send participants list to client
   size_t dataSize;
@@ -64,7 +66,7 @@ void sendParticipantsListToClient(int socket_fd) {
   fprintf(stdout, "Sending participants, noP:%d\n", participants.noOfIds);
   facade_write(socket_fd, data, dataSize);
 
-  for (uint8_t i = 0; i < currentFreeParticipantSpot; i++) {
+  for (uint8_t i = 0; i < numberOfParticipants; i++) {
     free(participants.ids[i]);
   }
   free(participants.ids);
@@ -83,20 +85,22 @@ void notifyClientsNewClientJoined(int socket_fd, char *clientID) {
   size_t bufferSize;
   uint8_t *buffer = pduCreator_pJoin(&pJoin, &bufferSize);
 
+  sem_wait(&helperMutex);
   for (uint8_t i = 0; i < currentFreeParticipantSpot; i++) {
     if (socket_fd != participantList[i].socket_fd) {
       facade_write(participantList[i].socket_fd, buffer, bufferSize);
     }
   }
+  sem_post(&helperMutex);
 
   free(pJoin.id);
   free(buffer);
 }
 
-
 bool sendDataFromServer(uint8_t *data, size_t dataSize) {
   bool allOk = true;
   ssize_t ret = 0;
+  sem_wait(&helperMutex);
   for (int i = 0; i < currentFreeParticipantSpot; i++) {
     ret = facade_write(participantList[i].socket_fd, data, dataSize);
     if (ret != dataSize) {
@@ -107,6 +111,7 @@ bool sendDataFromServer(uint8_t *data, size_t dataSize) {
       }
     }
   }
+  sem_post(&helperMutex);
   free(data);
   return allOk;
 }

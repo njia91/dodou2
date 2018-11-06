@@ -22,6 +22,7 @@ bool handleJoin(pduJoin *join, int socket_fd) {
   char* clientID = calloc(join->idSize + 1, sizeof(char));
   memcpy(clientID, join->id, join->idSize);
 
+
   addToParticipantsList(socket_fd, clientID);
   sendParticipantsListToClient(socket_fd);
 
@@ -69,23 +70,27 @@ bool handleMess(pduMess *mess, int socket_fd) {
   }
 
   // Add more info to the message
-  for (int i = 0; i < getCurrentFreeParticipantSpot(); i++) {
+  sem_wait(&helperMutex);
+  for (int i = 0; i < currentFreeParticipantSpot; i++) {
     if (socket_fd == participantList[i].socket_fd) {
       mess->idSize = (uint8_t) strlen(participantList[i].clientID);
       memcpy(mess->id, participantList[i].clientID, mess->idSize);
       mess->timeStamp = getCurrentTime();
     }
   }
+  sem_post(&helperMutex);
 
   fprintf(stdout, "Received a message from: %s\n", mess->id);
   // Send the message to everyone except the sender
   size_t bufferSize;
   uint8_t *buffer = pduCreator_mess(mess, &bufferSize);
-  for (int i = 0; i < getCurrentFreeParticipantSpot(); i++) {
+  sem_wait(&helperMutex);
+  for (int i = 0; i < currentFreeParticipantSpot; i++) {
     if (socket_fd != participantList[i].socket_fd) {
       facade_write(participantList[i].socket_fd, buffer, bufferSize);
     }
   }
+  sem_post(&helperMutex);
   free(buffer);
   return true;
 }
@@ -97,7 +102,8 @@ bool handleQuit(int socket_fd) {
   leave.timeStamp = getCurrentTime();
 
   // Find the id of the leaving client
-  for (int i = 0; i < getCurrentFreeParticipantSpot(); i++) {
+  sem_post(&helperMutex);
+  for (int i = 0; i < currentFreeParticipantSpot; i++) {
     if (socket_fd == participantList[i].socket_fd) {
       fprintf(stdout, "%s have left the chat\n", participantList[i].clientID);
       // Add the client id to the message
@@ -108,15 +114,18 @@ bool handleQuit(int socket_fd) {
       break;
     }
   }
+  sem_post(&helperMutex);
 
   size_t bufferSize;
   uint8_t *buffer = pduCreator_pLeave(&leave, &bufferSize);
   free(leave.id);
 
   // Notify all in participants list that a client have left
-  for (int i = 0; i < getCurrentFreeParticipantSpot(); i++) {
+  sem_wait(&helperMutex);
+  for (int i = 0; i < currentFreeParticipantSpot; i++) {
     facade_write(participantList[i].socket_fd, buffer, bufferSize);
   }
+  sem_post(&helperMutex);
   free(buffer);
 
   return true;
@@ -150,16 +159,18 @@ bool readInputFromUser(serverData *sData) {
         sendQuitFromServer();
       }
 
-      while (getCurrentFreeParticipantSpot() > 0) {
-        closeConnectionToClient(participantList[getCurrentFreeParticipantSpot() - 1].socket_fd, sData);
-        for (int i = 0; i < getCurrentFreeParticipantSpot(); i++) {
-          int socket_fd = participantList[getCurrentFreeParticipantSpot() - 1].socket_fd;
+      sem_post(&helperMutex);
+      while (currentFreeParticipantSpot > 0) {
+        closeConnectionToClient(participantList[currentFreeParticipantSpot - 1].socket_fd, sData);
+        for (int i = 0; i < currentFreeParticipantSpot; i++) {
+          int socket_fd = participantList[currentFreeParticipantSpot - 1].socket_fd;
           if (socket_fd == participantList[i].socket_fd) {
             removeFromParticipantsList(participantList[i].socket_fd);
             break;
           }
         }
       }
+      sem_wait(&helperMutex);
       fprintf(stdout, "Shutting down server...\n");
       setRunning(false);
       active = false;
@@ -168,9 +179,11 @@ bool readInputFromUser(serverData *sData) {
       if (getCurrentFreeParticipantSpot() == 0) {
         fprintf(stdout, "No active users\n");
       } else {
-        for (int i = 0; i < getCurrentFreeParticipantSpot(); i++) {
+        sem_wait(&helperMutex);
+        for (int i = 0; i < currentFreeParticipantSpot; i++) {
           fprintf(stdout, "User ID: %d, User name:%s\n", participantList[i].socket_fd, participantList[i].clientID);
         }
+        sem_post(&helperMutex);
       }
     } else if (startsWith("KICK", inputBuffer)) {
       char *clientID;
@@ -341,10 +354,10 @@ void server_main(int argc, char **argv) {
   fflush(stdin);
 
   pthread_t receivingThread;
-  //pthread_t receivingThread2;
+  pthread_t receivingThread2;
   int ret = pthread_create(&receivingThread, NULL, waitForIncomingMessages, (void *)&rInfo);
 
-  //pthread_create(&receivingThread2, NULL, waitForIncomingMessages, (void *)&rInfo);
+  pthread_create(&receivingThread2, NULL, waitForIncomingMessages, (void *)&rInfo);
 
   if (ret) {
     fprintf(stderr, "Unable to create a pthread. Error: %d\n", ret);
@@ -368,6 +381,7 @@ void server_main(int argc, char **argv) {
   fprintf(stdout, "Shutting down server\n");
   closeAndRemoveFD(epoll_fd, server_fd);
   pthread_join(receivingThread, NULL);
+  pthread_join(receivingThread2, NULL);
   sem_destroy(&mutex);
   sem_destroy(&helperMutex);
 

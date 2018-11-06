@@ -21,20 +21,19 @@ genericPdu *getPduFromSocket(int socket_fd){
   return pdu;
 }
 
-bool processSocketData(int socket_fd, void *args){
-  bool allOk = true;
+int processSocketData(int socket_fd, void *args){
+  int allOk = REARM_FD;
   clientData *cData = (clientData *)args;
   if (socket_fd == cData->commonEventFd) {
     eventfd_t value = 0;
 
     if (facade_read(socket_fd, &value, sizeof(eventfd_t))){
       if (value == TERMINATE){
-        allOk = false;
+        allOk = TERMINATE_SESSION;
       }
     } else {
       fprintf(stderr, "Enable to read from eventfd_Read()");
-      allOk = false;
-      // TODO Also set allOk to false?
+      allOk = TERMINATE_SESSION;
     }
 
   } else if (socket_fd == STDIN_FILENO){
@@ -47,7 +46,7 @@ bool processSocketData(int socket_fd, void *args){
   } else {
     genericPdu *p = getPduFromSocket(socket_fd);
     if (p == NULL){
-      return false;
+      return REMOVE_FD;
     }
 
     if (p->opCode == PJOIN || p->opCode == PLEAVE){
@@ -57,7 +56,7 @@ bool processSocketData(int socket_fd, void *args){
       }
     } else if (p->opCode == QUIT){
       fprintf(stderr, "\nChat server has terminated the session. Terminating \n");
-      allOk = false;
+      allOk = REMOVE_FD;
     } else if (p->opCode == MESS){
       pduMess *mess = (pduMess *) p;
       // Do not display messages sent by receiving client.
@@ -73,25 +72,26 @@ bool processSocketData(int socket_fd, void *args){
   return allOk;
 }
 
-bool readInputFromUser(clientData *cData) {
+int readInputFromUser(clientData *cData) {
   size_t buffSize = 0;
   char *buffer = NULL;
-  bool active = true;
+  int active = REARM_FD;
   ssize_t ret = 0;
   fflush(stdin);
 
   if (getline(&buffer, &buffSize, stdin) == -1){
     fprintf(stderr, "Failed to read data from user: %s\n", strerror(errno));
-    active = false;
+    active = REMOVE_FD;
   } else {
     if (strcmp(buffer, "QUIT\n") == 0){
-      active = false;
+      active = TERMINATE_SESSION;
       uint8_t *pduBuffer = pduCreator_quit(&buffSize);
       ret = facade_write(cData->server_fd, pduBuffer, buffSize);
       free(pduBuffer);
       if (ret != buffSize){
         fprintf(stderr, "Unable to write all data to socket.\n");
       }
+      write(cData->commonEventFd, &TERMINATE, sizeof(uint64_t));
     } else {
       char *text = calloc(strlen(buffer) - 1, sizeof(char));
       memcpy(text, buffer, strlen(buffer) - 1);
@@ -113,7 +113,7 @@ bool readInputFromUser(clientData *cData) {
         fprintf(stderr, "%s: Unable to write all data to socket. Size %zd  ret %zd\n",__func__, size, ret);
         fprintf(stderr, "Errno : %s \n", strerror(errno));
         if (errno == EBADF){
-          active = false;
+          active = TERMINATE_SESSION;
         }
       }
     }

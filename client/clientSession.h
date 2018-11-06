@@ -35,7 +35,7 @@ genericPdu *getPduFromSocket(int socket_fd);
  * @return True if socket should be re-armed in epoll, otherwise false.
  *
  */
-bool processSocketData(int socket_fd, void *args);
+int processSocketData(int socket_fd, void *args);
 
 /**
  * Prints a server message one another client has left or
@@ -101,6 +101,6 @@ int printServerParticipants(pduParticipants *p);
  *
  * @param cData Client Data
  */
-bool readInputFromUser(clientData *cData);
+int readInputFromUser(clientData *cData);
 
 #endif //DODOU2_CLIENTSESSION_H

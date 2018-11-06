@@ -12,9 +12,9 @@ void *waitForIncomingMessages(void *threadData){
   struct epoll_event events[MAX_EVENTS];
   struct epoll_event ev;
   bool isSessionActive = true;
-
+  int allOk = REMOVE_FD;
   int availFds = 0;
-  while (isSessionActive && rInfo->numOfActiveFds > 0) {
+  while (isSessionActive) {
     availFds = facade_epoll_wait(rInfo->epoll_fd, events, MAX_EVENTS, -1);
     if (availFds == -1) {
       fprintf(stderr, "%s: ",__func__);
@@ -31,14 +31,21 @@ void *waitForIncomingMessages(void *threadData){
         closeAndRemoveFD(rInfo->epoll_fd, events[i].data.fd);
         rInfo->numOfActiveFds--;
       } else if ((events[i].events & EPOLLIN) ){
-        isSessionActive = rInfo->func(events[i].data.fd, rInfo->args);
-        if (isSessionActive){
+        allOk = rInfo->func(events[i].data.fd, rInfo->args);
+        if (allOk == REARM_FD){
           ev.data.fd = events[i].data.fd;
-          ev.events = EPOLLIN | EPOLLONESHOT ;
+          ev.events = EPOLLIN | EPOLLONESHOT;
           if (facade_epoll_ctl(rInfo->epoll_fd, EPOLL_CTL_MOD, events[i].data.fd, &ev) == -1){
             fprintf(stderr, "%s: epoll_ctl failed. Errno: %s \n", __func__, strerror(errno));
           }
-          facade_epoll_ctl(rInfo->epoll_fd, EPOLL_CTL_MOD, events[i].data.fd, &ev);
+          //facade_epoll_ctl(rInfo->epoll_fd, EPOLL_CTL_MOD, events[i].data.fd, &ev);
+        } else if (allOk == REMOVE_FD) {
+          closeAndRemoveFD(rInfo->epoll_fd, events[i].data.fd);
+          rInfo->numOfActiveFds--;
+        } else if (allOk == TERMINATE_SESSION){
+          closeAndRemoveFD(rInfo->epoll_fd, events[i].data.fd);
+          rInfo->numOfActiveFds--;
+          isSessionActive = false;
         }
       } else {
         fprintf(stderr, "%s: Unknown EPOLL EVENT %d  \n",__func__, events[i].events);

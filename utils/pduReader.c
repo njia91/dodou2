@@ -49,8 +49,6 @@ genericPdu *getDataFromSocket(int socket_fd) {
 
   ssize_t ret = facade_read(socket_fd, &opCode, 1);
 
-  //printf("WE GOT THIS OP CODE BACK %u   Size %zd\n", opCode, ret);
-
   if (ret == 0){
     fprintf(stderr, "%s: Could not read data from Socket.\n", __func__);
     return NULL;

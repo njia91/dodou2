@@ -225,8 +225,8 @@ bool readInputFromUser(serverData *sData) {
   return active;
 }
 
-bool processSocketData(int socket_fd, void *args) {
-  bool allOk = true;
+int processSocketData(int socket_fd, void *args) {
+  int allOk = REARM_FD;
   serverData *sData = (serverData *)args;
 
   if (socket_fd == sData->server_fd) {
@@ -240,7 +240,7 @@ bool processSocketData(int socket_fd, void *args) {
     int result = facade_epoll_ctl(sData->epoll_fd, EPOLL_CTL_ADD, client_fd, &ev_client);
     if (result == -1) {
       fprintf(stderr, "Failed to add socket %d to epoll: %s\n", client_fd, strerror(errno));
-      allOk = false;
+      return REMOVE_FD;
     } else {
       sData->numOfActiveFds++;
       //fprintf(stdout, "Added client to epoll: %d, numberOfEpoll:%d\n", client_fd, sData->numOfActiveFds);
@@ -249,7 +249,8 @@ bool processSocketData(int socket_fd, void *args) {
     // Input from the server terminal
     allOk = readInputFromUser(sData);
     if (!allOk) {
-      running = false;
+      setRunning(false);
+      allOk = TERMINATE_SESSION;
     }
   } else {
     // Client socket
@@ -258,22 +259,17 @@ bool processSocketData(int socket_fd, void *args) {
       // Client have disconnected unexpectedly
       handleQuit(socket_fd);
       closeConnectionToClient(socket_fd, sData);
-      return true;
+      return REMOVE_FD;
     }
-    // Its a message, process it
+    // It's a message, process it
     if (p->opCode == JOIN) {
       allOk = handleJoin((pduJoin *)p, socket_fd);
     } else if (p->opCode == MESS) {
-      if (handleMess((pduMess *)p, socket_fd)) {
-        // Server send mess with bad checksum
-        //handleQuit(socket_fd);
-        //closeConnectionToClient(socket_fd, sData);
-      }
+      handleMess((pduMess *)p, socket_fd);
     } else if (p->opCode == QUIT) {
-      allOk = handleQuit(socket_fd);
-      if (allOk) {
-        closeConnectionToClient(socket_fd, sData);
-      }
+      handleQuit(socket_fd);
+      closeConnectionToClient(socket_fd, sData);
+      return REMOVE_FD;
     } else {
       fprintf(stderr, "Received unhandled message with OP Code: %d\n", p->opCode);
     }
@@ -345,7 +341,10 @@ void server_main(int argc, char **argv) {
   fflush(stdin);
 
   pthread_t receivingThread;
+  //pthread_t receivingThread2;
   int ret = pthread_create(&receivingThread, NULL, waitForIncomingMessages, (void *)&rInfo);
+
+  //pthread_create(&receivingThread2, NULL, waitForIncomingMessages, (void *)&rInfo);
 
   if (ret) {
     fprintf(stderr, "Unable to create a pthread. Error: %d\n", ret);
@@ -367,10 +366,11 @@ void server_main(int argc, char **argv) {
     }
   }
   fprintf(stdout, "Shutting down server\n");
-  close(server_fd);
+  closeAndRemoveFD(epoll_fd, server_fd);
   pthread_join(receivingThread, NULL);
   sem_destroy(&mutex);
   sem_destroy(&helperMutex);
+
   free(args.nameServerIP);
   free(args.serverName);
   free(args.nameServerPort);

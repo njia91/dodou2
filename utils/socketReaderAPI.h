@@ -15,13 +15,17 @@
 #include "pduCommon.h"
 
 static const int MAX_EVENTS = 32;
+static const int TERMINATE_SESSION = -1;
+static const int REMOVE_FD = 0;
+static const int REARM_FD = 1;
+
 
 typedef uint64_t eventfd_t;
 
 // EventFd Code
 static const eventfd_t TERMINATE = 1;
 
-typedef bool processEvent(int, void *);
+typedef int processEvent(int, void *);
 
 typedef struct {
   int epoll_fd;

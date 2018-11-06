@@ -58,7 +58,7 @@ bool readInputFromUser(serverData *sData);
  * @param args Important data
  * @return If all is ok
  */
-bool processSocketData(int socket_fd, void *args);
+int processSocketData(int socket_fd, void *args);
 
 bool checkRunning();
 bool setRunning(bool newRunning);

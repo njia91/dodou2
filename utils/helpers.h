@@ -19,7 +19,6 @@ typedef struct {
 
 
 typedef struct {
-  int numOfActiveFds;
   void *args;
   int server_fd;
   int epoll_fd;

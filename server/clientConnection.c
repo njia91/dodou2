@@ -131,5 +131,4 @@ bool sendMessageFromServer(pduMess *mess) {
 
 void closeConnectionToClient(int client_fd, serverData *sData) {
   closeAndRemoveFD(sData->epoll_fd, client_fd);
-  sData->numOfActiveFds--;
 }

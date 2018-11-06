@@ -102,7 +102,7 @@ bool handleQuit(int socket_fd) {
   leave.timeStamp = getCurrentTime();
 
   // Find the id of the leaving client
-  sem_post(&helperMutex);
+  sem_wait(&helperMutex);
   for (int i = 0; i < currentFreeParticipantSpot; i++) {
     if (socket_fd == participantList[i].socket_fd) {
       fprintf(stdout, "%s have left the chat\n", participantList[i].clientID);
@@ -215,7 +215,9 @@ bool readInputFromUser(serverData *sData) {
           facade_write(client_fd, buffer, bufferSize);
           free(buffer);
 
+          sem_post(&helperMutex);
           removeFromParticipantsList(client_fd);
+          sem_wait(&helperMutex);
           closeAndRemoveFD(sData->epoll_fd, client_fd);
           active = true;
         }
@@ -254,9 +256,6 @@ int processSocketData(int socket_fd, void *args) {
     if (result == -1) {
       fprintf(stderr, "Failed to add socket %d to epoll: %s\n", client_fd, strerror(errno));
       return REMOVE_FD;
-    } else {
-      sData->numOfActiveFds++;
-      //fprintf(stdout, "Added client to epoll: %d, numberOfEpoll:%d\n", client_fd, sData->numOfActiveFds);
     }
   } else if (socket_fd == STDIN_FILENO) {
     // Input from the server terminal
@@ -289,7 +288,9 @@ int processSocketData(int socket_fd, void *args) {
     genericPdu *p = getDataFromSocket(socket_fd);
     if (p == NULL) {
       // Client have disconnected unexpectedly
+
       handleQuit(socket_fd);
+
       closeConnectionToClient(socket_fd, sData);
       return REMOVE_FD;
     }
@@ -365,7 +366,6 @@ void server_main(int argc, char **argv) {
   facade_setToNonBlocking(server_fd);
 
   sData.server_fd = server_fd;
-  sData.numOfActiveFds = 1; // Just the server
   sData.epoll_fd = epoll_fd;
   sData.commonEvent_fd = event_fd;
 

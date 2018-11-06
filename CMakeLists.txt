@@ -4,7 +4,7 @@ project(dodou2)
 set(GCC_COVERAGE_COMPILE_FLAGS "-D_POSIX_C_SOURCE=200112L")
 
 set(CCOMPILE_OPTIONS
-        -Wall -Werror -std=c99)
+        -Wall -Werror -std=c99 -g)
 set(CPPCOMPILE_OPTIONS)
 
 #set(CMAKE_CXX_STANDARD 11)

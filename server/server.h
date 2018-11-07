@@ -10,12 +10,11 @@
 #include "nameServerConnection.h"
 #include "helpers.h"
 #include "list.h"
+#include "inputHandler.h"
 
 serverData sData;
 bool running;
 sem_t mutex;
-
-void parseServerArgs(int argc, char **argv, serverInputArgs *args);
 
 /**
  * Will do the following:
@@ -44,13 +43,6 @@ bool handleMess(pduMess *mess, int socket_fd);
  * @return If all is ok
  */
 bool handleQuit(int socket_fd);
-
-/**
- *
- * @param sData
- * @return
- */
-bool readInputFromUser(serverData *sData);
 
 /**
  * Processes the data that is read from a socket

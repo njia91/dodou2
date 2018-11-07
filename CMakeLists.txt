@@ -93,7 +93,7 @@ add_executable(server
         server/server.h
         server/serverMain.c
         server/clientConnection.c
-        server/clientConnection.h)
+        server/clientConnection.h server/inputHandler.c server/inputHandler.h)
 
 
 add_library(UTILS ${UTILS_SOURCE})

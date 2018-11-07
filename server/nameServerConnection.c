@@ -32,7 +32,7 @@ int establishConnectionWithNs(serverInputArgs args) {
   return nameServer_fd;
 }
 
-void registerToServer(int sock, serverInputArgs args) {
+void registerToNameServer(int sock, serverInputArgs args) {
   pduReg registerMessage;
   registerMessage.opCode = REG;
   registerMessage.serverName = (uint8_t *) args.serverName;

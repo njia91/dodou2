@@ -51,6 +51,8 @@ void addToParticipantsList(int socket_fd, char *clientID);
 
 void removeFromParticipantsList(int socket_fd);
 
+void parseServerArgs(int argc, char **argv, serverInputArgs *args);
+
 void fillInAddrInfo(struct addrinfo **addrInfo, int port, const uint8_t *IPAddress, int socketType, int flags);
 
 #endif //DODOU2_HELPERS_H

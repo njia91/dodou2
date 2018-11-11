@@ -49,42 +49,9 @@ class PduReaderTest : public testing::Test
   }
 };
 
-
-TEST_F(PduReaderTest, read_reqPacket){
-  pduReg r;
-  char *serName = (char *)"testHost";
-  uint8_t serLen = strlen(serName);
-  size_t bufferSize;
-
-  r.opCode = REG;
-  r.tcpPort = 454;
-  r.serverName = (uint8_t *)serName;
-  r.serverNameSize = serLen;
-
-  uint8_t *retVal = pduCreator_reg(&r, &bufferSize);
-  globalBuffer = retVal + 1;
-
-  uint8_t buffer[4];
-  buffer[0] = 4;
-  buffer[1] = 0;
-  buffer[2] = 1;
-  buffer[3] = 1;
-
-  pduReg *ret = NULL;//pduReader_reg(buffer);
-
-  EXPECT_EQ(ret->opCode, REG);
-  EXPECT_EQ(ret->serverNameSize, serLen);
-  EXPECT_EQ(ret->tcpPort, r.tcpPort);
-  EXPECT_EQ(strcmp((char *)ret->serverName, (char *)r.serverName), 0);
-  globalOffset = 0;
-  free(retVal);
-  free(ret->serverName);
-  free(ret);
-}
-
 TEST_F(PduReaderTest, read_ackPacket){
   pduAck r;
-
+  int socket_fd = 1;
   r.opCode = ACK;
   r.id = 454;
 
@@ -95,13 +62,13 @@ TEST_F(PduReaderTest, read_ackPacket){
   memcpy(retVal, &(r.opCode), sizeof(uint8_t));
   memcpy(retVal + (2 * BYTE_SIZE), &u16, sizeof(uint16_t));
 
-  globalBuffer = retVal + 1;
+  globalBuffer = retVal;
 
   uint8_t buffer[4];
   buffer[1] = 0;
   buffer[2] = 0;
   buffer[3] = 1;
-  pduAck *ret = pduReader_ack(buffer);
+  pduAck *ret = (pduAck *) getUdpDataFromSocket(socket_fd);
 
   EXPECT_EQ(ret->opCode, ACK);
   EXPECT_EQ(ret->id, r.id);
@@ -275,7 +242,7 @@ TEST_F(PduReaderTest, read_pLeavePdu){
   globalBuffer = retVal + 1;
   pduPLeave *ret = pduReader_pLeave(4);
 
-  EXPECT_EQ(ret->opCode, PJOIN);
+  EXPECT_EQ(ret->opCode, PLEAVE);
   EXPECT_EQ(r.idSize, ret->idSize);
   EXPECT_EQ(strcmp((char *) ret->id, (char *)r.id), 0);
   EXPECT_EQ(r.timeStamp, ret->timeStamp);
